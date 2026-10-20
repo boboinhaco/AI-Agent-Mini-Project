@@ -1,5 +1,9 @@
 # Runbook: 응답 지연(High Latency) 대응 절차
 
+## 증상
+응답 지연, 응답이 느려요, 로그인 느림, p95 latency 임계치(1.0s) 초과, 커넥션 풀 사용률 90% 초과(connection pool used), 처리 시간 증가. 영문 알림: high latency, slow response, p95 latency threshold, connection pool exhausted.
+
+## 절차
 1. get_monitoring_status로 p95 지연시간과 커넥션 풀 사용률을 확인한다.
 2. 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다.
 3. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다.

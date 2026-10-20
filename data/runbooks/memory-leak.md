@@ -1,5 +1,9 @@
 # Runbook: 메모리 누수(Memory Leak) 대응 절차
 
+## 증상
+메모리 사용률 지속 상승, 메모리 누수, 메모리가 계속 올라감, heap 한계 근접(heap near limit), OOM 위험, 재시작 후 다시 증가. 영문 알림: memory usage climbing, memory leak, heap near limit, out of memory.
+
+## 절차
 1. get_monitoring_status로 메모리 사용률 추세(시간에 따라 꾸준히 증가하는지)를 확인한다.
 2. OOM 직전(90% 이상)이면 해당 프로세스를 즉시 재시작해 서비스 중단을 막는다 — 재시작은 임시 조치일 뿐임을 기록해둔다.
 3. 힙 덤프 또는 프로파일링 도구로 어떤 객체가 계속 쌓이는지 확인한다.

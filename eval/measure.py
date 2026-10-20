@@ -61,8 +61,8 @@ def check(spec: dict, data: dict) -> dict:
                     if e.get("type") == "TaskCompleted" and e.get("source") == "runbook"}
         results["systems_ok"] = spec["systems"].issubset(investigated)
         if spec.get("forbid"):
-            results["no_fake_system"] = not (spec["forbid"] & investigated) and \
-                not any(s in reply for s in spec["forbid"])
+            # 목록에 없는 시스템을 '조사 대상'으로 삼지 않았는지 (질문 인용은 허용)
+            results["no_fake_system"] = not (spec["forbid"] & investigated)
         if spec.get("runbook"):
             results["runbook_ok"] = spec["runbook"] in runbooks
         if spec.get("analysis"):

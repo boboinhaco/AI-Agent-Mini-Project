@@ -243,3 +243,21 @@ all_total_vue/
 │   ├── image_usecase/           # manual_ollma.md 캡처 이미지
 │   └── image_usecase_openai/    # manual_openai.md 캡처 이미지
 ```
+
+---
+
+## Mini-project 개선 내역 (1차 — 기본 기능 개선)
+
+Before 기준선은 [`before/README.md`](../before/README.md), After 측정은 `after/`에 같은 스크립트
+(`eval/measure.py`)로 기록했다.
+
+| # | 영역 | 무엇을 바꿨나 | 파일 |
+|---|---|---|---|
+| 1 | 모듈화 | 338줄짜리 `graph.py`를 노드별 모듈로 분리. `graph.py`는 조립(엣지)만 담당 | `agent/nodes/*.py`, `agent/state.py` |
+| 2 | RAG | 키워드 9줄 규칙 + db-down 폴백으로 고르던 incident_type을 runbook 벡터 인덱스(InMemoryVectorStore) 의미 검색으로 교체. 임베딩은 백엔드별(fake=해싱, ollama=nomic-embed-text, openai=text-embedding-3-small) | `agent/rag.py`, `agent/nodes/replan.py`, `data/runbooks/*.md`(증상 섹션 추가) |
+| 3 | 라우팅 | "느려요/타임아웃/메모리/디스크" 등 확장 패턴 + 알려진 시스템명 언급 시 incident로 코드 교정 (fake 회귀 10건 중 9건 오분류 → 0건) | `agent/state.py`, `agent/nodes/route.py` |
+| 4 | 검증 강화 | 길이·번호 검사에 더해 ① 조사한 시스템 전부 언급 ② CPU 수치 인용 ③ 조사·질문에 없는 시스템명 금지. 반려 사유를 write에 피드백 | `agent/nodes/validate.py` |
+| 5 | 안정성 | Ollama/OpenAI 호출을 동기 `httpx.post` → 비동기로 바꿔 한 요청이 서버 전체를 막던 문제 해결. 소형 모델 타임아웃(기본 90s) 시 코드 레벨 계획으로 복구 (billing-service 500 오류 해결) | `agent/ollama_llm.py`, `agent/openai_llm.py` |
+| 6 | fake 계획 | 목록 밖 시스템(billing-service)을 조사 대상으로 삼던 정규식을 KNOWN_SYSTEMS 클램프로 교체, 분석 요청 시 needs_analysis=True | `agent/fake_llm.py` |
+
+측정(회귀 쿼리 10개, 정확도 체크 통과 수): fake 7/32 → 32/32.

@@ -1,5 +1,9 @@
 # Runbook: 네트워크 타임아웃 대응 절차
 
+## 증상
+네트워크 타임아웃, 요청 타임아웃, 상류 서비스 호출 실패(upstream timeout), 504 Gateway Timeout, 패킷 손실(packet loss), 특정 구간 연결 끊김, DNS 해석 실패. 영문 알림: upstream timeout, 504, network packet loss, connection timeout.
+
+## 절차
 1. get_monitoring_status로 어떤 시스템 간 호출에서 타임아웃이 발생하는지 확인한다.
 2. DNS 해석 실패, 방화벽/보안그룹 변경, 로드밸런서 헬스체크 실패 중 최근 변경 사항이 있었는지 점검한다.
 3. 특정 리전/가용영역에서만 발생하면 해당 구간을 우회하는 라우팅으로 임시 전환한다.

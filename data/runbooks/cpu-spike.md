@@ -1,5 +1,9 @@
 # Runbook: CPU 급증 대응 절차
 
+## 증상
+CPU 사용률 급증, CPU 치솟음, CPU 80% 90% 초과(threshold), 특정 인스턴스 응답 느림(instance responding slow), 처리량 저하, 배포 직후 부하 증가. 영문 알림: CPU high, cpu spike, load average high.
+
+## 절차
 1. get_monitoring_status로 CPU 사용률과 최근 배포/트래픽 변화 시점을 확인한다.
 2. 반복 호출, 배치 작업 중복 실행 같은 특정 요청 패턴이 원인인지 최근 로그에서 확인한다.
 3. CPU가 90%를 넘고 지속되면 해당 인스턴스를 오토스케일링 그룹에서 한 대 더 띄워 부하를 분산한다.

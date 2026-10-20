@@ -8,6 +8,8 @@ import re
 
 from langsmith import traceable
 
+from .state import DEFAULT_SYSTEM, is_incident_query, mentioned_systems
+
 
 class FakeLLM:
     def __init__(self, name: str, usd_per_1k_tokens: float):
@@ -24,20 +26,26 @@ class FastLLM(FakeLLM):
     """분류·계획 등 짧고 정형적인 단계 전담 (저비용)."""
 
     @traceable(run_type="llm", name="fast_llm.route")
-    def route(self, query: str) -> tuple[dict, dict]:
-        """Wave 5 — 쿼리 라우팅. 장애 관련이면 incident 파이프라인, 아니면 chat 직행."""
-        incident = bool(re.search(r"장애|진단|다운|지연|급증|incident|티켓", query))
+    async def route(self, query: str) -> tuple[dict, dict]:
+        """Wave 5 — 쿼리 라우팅. 장애 관련이면 incident 파이프라인, 아니면 chat 직행.
+
+        Before: 키워드 7개("장애|진단|다운|지연|급증|incident|티켓")만 봐서 "느려요/타임아웃/
+        메모리/디스크" 쿼리를 chat으로 오분류(회귀 10건 중 9건). After: state.is_incident_query —
+        알려진 시스템명 언급 또는 확장된 장애 표현."""
+        incident = is_incident_query(query)
         result = {"route": "incident" if incident else "chat", "needs_analysis": False}
         return result, self._usage(query, str(result))
 
     @traceable(run_type="llm", name="fast_llm.plan")
-    def plan(self, query: str, procedure_prompt: str) -> tuple[dict, dict]:
+    async def plan(self, query: str, procedure_prompt: str) -> tuple[dict, dict]:
         """Wave 4 — Plan/Task 분해. MCP Prompt가 준 표준 절차를 따라 계획을 세운다.
 
         Wave 6 재현: needs_analysis=False라고 스스로 판단해 놓고도 analysis task를
         끼워 넣는 '모델의 자기모순'을 결정론적으로 재현한다 → gate 노드가 걸러낸다.
         """
-        systems = re.findall(r"[a-z][a-z0-9-]+-(?:service|\d+)", query) or ["auth-service"]
+        # KNOWN_SYSTEMS 멤버십으로 클램프 — Before는 정규식이 "billing-service"처럼 목록에
+        # 없는 이름도 조사 대상으로 삼아 status=unknown 결과를 답변에 실었다.
+        systems = mentioned_systems(query) or [DEFAULT_SYSTEM]
         if "web-01" not in systems:
             systems.append("web-01")   # 연관 시스템 비교 조회 → Wave 10b 병렬 실행 대상
         tasks = [
@@ -47,11 +55,13 @@ class FastLLM(FakeLLM):
         ]
         tasks.append({"id": "task-analysis", "agent": "analysis",
                       "kind": "pattern-analysis", "status": "pending"})   # 자기모순 task
-        result = {"needs_analysis": False, "tasks": tasks}
+        # 비교/공통 원인 분석을 명시적으로 요구한 쿼리만 needs_analysis=True (실모델과 동일 기준)
+        needs_analysis = bool(re.search(r"분석|공통\s*원인|비교|패턴", query))
+        result = {"needs_analysis": needs_analysis, "tasks": tasks}
         return result, self._usage(query + procedure_prompt, str(result))
 
     @traceable(run_type="llm", name="fast_llm.analyze")
-    def analyze(self, collected: list[dict]) -> tuple[str, dict]:
+    async def analyze(self, collected: list[dict]) -> tuple[str, dict]:
         """Wave 6 보완 — 여러 시스템의 monitoring 결과 사이에 공통 패턴이 있는지 비교."""
         mon = [c["data"] for c in collected if c["source"] == "monitoring"]
         degraded = [d["system_name"] for d in mon if d.get("status") != "healthy"]
