@@ -1,0 +1,36 @@
+data: {"type": "RouteDecided", "route": "incident", "node": "route"}
+
+data: {"type": "PlanCreated", "task_count": 3, "targets": ["web-01", "auth-service"], "node": "plan"}
+
+data: {"type": "GateApplied", "removed_analysis_tasks": 1, "node": "gate"}
+
+data: {"type": "TaskCompleted", "id": "task-0", "source": "monitoring", "target": "web-01", "retries": 0, "node": "research"}
+
+data: {"type": "TaskCompleted", "id": "task-1", "source": "monitoring", "target": "auth-service", "retries": 0, "node": "research"}
+
+data: {"type": "ReplanCheck", "round": 0, "is_sufficient": false, "gap_task": "task-gap-runbook", "target": "high-latency", "node": "replan_check"}
+
+data: {"type": "TaskCompleted", "id": "task-gap-runbook", "source": "runbook", "target": "high-latency", "retries": 0, "node": "research"}
+
+data: {"type": "ReplanCheck", "round": 1, "is_sufficient": true, "node": "replan_check"}
+
+data: {"type": "AnalysisSkipped", "reason": "analysis task 0개", "node": "analysis"}
+
+data: {"type": "AnswerToken", "attempt": 1, "delta": "재시작하면 됩니다."}
+
+data: {"type": "DraftWritten", "attempt": 1, "length": 10, "node": "write"}
+
+data: {"type": "Validation", "attempt": 1, "verdict": "불합격", "node": "validate"}
+
+data: {"type": "AnswerToken", "attempt": 2, "delta": "'web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘' 진단 결과: 1) 모니터링: web-01 상태=healthy, CPU 38.2% (알림 0건) · auth-service 상태=degraded, CPU 81.8% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요."}
+
+data: {"type": "DraftWritten", "attempt": 2, "length": 334, "node": "write"}
+
+data: {"type": "Validation", "attempt": 2, "verdict": "합격", "node": "validate"}
+
+data: {"type": "Finalize", "pipeline": "incident-v2", "node": "finalize"}
+
+data: {"type": "FinalAnswer", "reply": "'web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘' 진단 결과: 1) 모니터링: web-01 상태=healthy, CPU 38.2% (알림 0건) · auth-service 상태=degraded, CPU 81.8% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.", "prompt": null}
+
+data: [DONE]
+

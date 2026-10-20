@@ -1,0 +1,16 @@
+       0 agent/__init__.py
+      17 agent/deps.py
+     125 agent/fake_llm.py
+     338 agent/graph.py
+     122 agent/mcp_client.py
+     261 agent/ollama_llm.py
+     238 agent/openai_llm.py
+      22 agent/retry.py
+      37 agent/session_store.py
+      31 agent/supervisor_v1.py
+     197 server.py
+      85 mcp_server.py
+      33 mcp_server_docs.py
+      65 web_demo_server.py
+     211 web_chat.html
+    1782 total

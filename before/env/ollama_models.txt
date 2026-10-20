@@ -1,0 +1,5 @@
+NAME            ID              SIZE      MODIFIED     
+qwen3:8b        500a1f067a9f    5.2 GB    4 hours ago     
+qwen3:0.6b      7df6b6e09427    522 MB    4 hours ago     
+qwen2.5:0.5b    a8b0c5157701    397 MB    22 hours ago    
+qwen3.5:2b      324d162be6ca    2.7 GB    7 weeks ago     

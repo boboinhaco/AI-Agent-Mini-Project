@@ -1,0 +1,316 @@
+INFO:     Started server process [39863]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 48] error while attempting to bind on address ('127.0.0.1', 8102): address already in use
+INFO:     Waiting for appINFO:     Shutting down
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:      - "GET /health HTTP/1.1" 200 OK
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/connection.py", line 103, in handle_request
+    return self._connection.handle_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/http11.py", line 136, in handle_request
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/http11.py", line 106, in handle_request
+    ) = self._receive_response_headers(**kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/http11.py", line 177, in _receive_response_headers
+    event = self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/http11.py", line 217, in _receive_event
+    data = self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_backends/sync.py", line 126, in read
+    with map_exceptions(exc_map):
+  File "/opt/homebrew/Cellar/python@3.11/3.11.15_4/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadTimeout: timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1194, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/routing.py", line 678, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 2809, in app
+    await route.handle(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 1328, in handle
+    await super().handle(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/routing.py", line 284, in handle
+    await self.app(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 166, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 152, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 745, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 372, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 143, in chat
+    result, run_id = await _handle_chat(req.message, req.thread_id)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 130, in _handle_chat
+    result = await app.state.graph.ainvoke(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/main.py", line 4178, in ainvoke
+    async for chunk in self.astream(
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/main.py", line 3529, in astream
+    async for _ in runner.atick(
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/_retry.py", line 737, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/graph.py", line 113, in plan_node
+    result, usage = deps.fast_llm.plan(state["query"], procedure)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/ollama_llm.py", line 179, in plan
+    content, usage = self._chat(system, user, schema=PLAN_SCHEMA)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/ollama_llm.py", line 104, in _chat
+    resp = httpx.post(OLLAMA_URL, json=payload, timeout=300.0)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_api.py", line 304, in post
+    return request(
+           ^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_api.py", line 109, in request
+    return client.request(
+           ^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 249, in handle_request
+    with map_httpcore_exceptions():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.15_4/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout: timed out
+During task with name 'plan' and id 'b9c2ec25-817b-c747-5c9c-c23ff6381efe'
+INFO:     Waiting for background tasks to complete. (CTRL+C to force quit)
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/connection.py", line 103, in handle_request
+    return self._connection.handle_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/http11.py", line 136, in handle_request
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/http11.py", line 106, in handle_request
+    ) = self._receive_response_headers(**kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/http11.py", line 177, in _receive_response_headers
+    event = self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_sync/http11.py", line 217, in _receive_event
+    data = self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_backends/sync.py", line 126, in read
+    with map_exceptions(exc_map):
+  File "/opt/homebrew/Cellar/python@3.11/3.11.15_4/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadTimeout: timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1194, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/routing.py", line 678, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 2809, in app
+    await route.handle(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 1328, in handle
+    await super().handle(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/routing.py", line 284, in handle
+    await self.app(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 166, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 152, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 745, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 372, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 143, in chat
+    result, run_id = await _handle_chat(req.message, req.thread_id)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 130, in _handle_chat
+    result = await app.state.graph.ainvoke(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/main.py", line 4178, in ainvoke
+    async for chunk in self.astream(
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/main.py", line 3529, in astream
+    async for _ in runner.atick(
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/_retry.py", line 737, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/graph.py", line 113, in plan_node
+    result, usage = deps.fast_llm.plan(state["query"], procedure)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/ollama_llm.py", line 179, in plan
+    content, usage = self._chat(system, user, schema=PLAN_SCHEMA)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/ollama_llm.py", line 104, in _chat
+    resp = httpx.post(OLLAMA_URL, json=payload, timeout=300.0)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_api.py", line 304, in post
+    return request(
+           ^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_api.py", line 109, in request
+    return client.request(
+           ^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 249, in handle_request
+    with map_httpcore_exceptions():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.15_4/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout: timed out
+During task with name 'plan' and id '79303f5f-f6d3-d696-6bc5-aeb99cd8688d'
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39798]
