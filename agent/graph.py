@@ -1,18 +1,21 @@
 """v2 Supervisor — langgraph.StateGraph 조립 (노드 구현은 agent/nodes/ 참조).
 
 route → (chat 직행 | incident 파이프라인)
-incident: plan → gate → research → replan_check(RAG) → analysis → write → validate → finalize
+incident: plan → gate → research(서브그래프: metrics/log/runbook 에이전트) → replan_check(RAG)
+          → analysis → write → approval(HITL interrupt) → validate → finalize
 
 모든 노드는 SupervisorDeps를 functools.partial로 주입받는 순수 함수다(Wave 13).
 """
 from functools import partial
 
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
 from .deps import SupervisorDeps
-from .nodes import (analysis_node, chat_answer_node, finalize_node, gate_node, plan_node,
-                    replan_check_node, research_node, route_node, validate_node, write_node)
+from .nodes import (analysis_node, approval_node, chat_answer_node, finalize_node, gate_node,
+                    plan_node, replan_check_node, route_node, validate_node, write_node)
 from .state import AgentState
+from .subgraphs import build_research_subgraph
 
 # 하위 호환 — 외부에서 graph.KNOWN_SYSTEMS 등을 참조하던 코드용
 from .state import KNOWN_SYSTEMS, extract_system_name as _extract_system_name  # noqa: F401
@@ -27,6 +30,14 @@ def _after_replan_check(state: AgentState) -> str:
     return "analysis" if last.get("is_sufficient") else "research"
 
 
+def _after_approval(state: AgentState) -> str:
+    """거절되면 피드백을 들고 write로 되돌아간다 (거절 횟수 상한 초과 시 validate로 진행)."""
+    approval = state.get("approval")
+    if approval and not approval.get("approved") and not approval.get("escalated"):
+        return "write"
+    return "validate"
+
+
 def _after_validate(state: AgentState) -> str:
     return "finalize" if state.get("validation_feedback") is None else "write"
 
@@ -38,10 +49,11 @@ def build_graph(deps: SupervisorDeps):
     g.add_node("chat_answer", node(chat_answer_node))
     g.add_node("plan", node(plan_node))
     g.add_node("gate", node(gate_node))
-    g.add_node("research", node(research_node))
+    g.add_node("research", build_research_subgraph(deps))   # compiled subgraph = 노드 하나
     g.add_node("replan_check", node(replan_check_node))
     g.add_node("analysis", node(analysis_node))
     g.add_node("write", node(write_node))
+    g.add_node("approval", node(approval_node))
     g.add_node("validate", node(validate_node))
     g.add_node("finalize", node(finalize_node))
 
@@ -55,8 +67,12 @@ def build_graph(deps: SupervisorDeps):
     g.add_conditional_edges("replan_check", _after_replan_check,
                             {"analysis": "analysis", "research": "research"})
     g.add_edge("analysis", "write")
-    g.add_edge("write", "validate")
+    g.add_edge("write", "approval")
+    g.add_conditional_edges("approval", _after_approval,
+                            {"write": "write", "validate": "validate"})
     g.add_conditional_edges("validate", _after_validate,
                             {"finalize": "finalize", "write": "write"})
     g.add_edge("finalize", END)
-    return g.compile()
+    # interrupt()/resume에는 체크포인터가 필요하다. 요청마다 고유 thread_id(run_id)를 쓰므로
+    # 메모리 체크포인터로 충분하다(서버 재시작 시 '승인 대기 중'인 run만 사라진다).
+    return g.compile(checkpointer=MemorySaver())

@@ -63,6 +63,8 @@ class AgentState(TypedDict, total=False):
     draft: str
     validation_attempts: int
     validation_feedback: str
+    approval: dict | None
+    approval_rejections: int
     final: str
     last_prompt: str
     cost_usd: float

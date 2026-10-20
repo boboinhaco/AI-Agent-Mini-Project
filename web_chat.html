@@ -75,6 +75,17 @@
     color: white; font-size: 14px; cursor: pointer;
   }
   button:disabled { background: #3a3a52; cursor: default; }
+  .approval {
+    max-width: 70%; background: #2a2316; border: 1px solid #a07a2a; border-radius: 12px;
+    padding: 12px 14px; font-size: 13px; line-height: 1.5;
+  }
+  .approval h4 { margin: 0 0 6px; font-size: 13px; color: #f0c674; }
+  .approval ul { margin: 4px 0 10px 18px; padding: 0; }
+  .approval .btns { display: flex; gap: 8px; }
+  .approval .btns button { padding: 7px 14px; font-size: 13px; }
+  .approval .btns .reject { background: #6b3a3a; }
+  .approval.decided { opacity: 0.6; }
+  .memo { max-width: 70%; font-size: 12px; color: #7fb3a6; padding: 2px 14px; }
 </style>
 </head>
 <body>
@@ -93,6 +104,18 @@
       <div v-else-if="item.kind === 'agent'" class="row agent">
         <div class="bubble">{{ item.text }}</div>
       </div>
+
+      <div v-else-if="item.kind === 'approval'" class="approval" :class="{ decided: item.decision }">
+        <h4>⚠️ 운영자 승인 필요 — 초안에 위험 조치가 포함돼 있습니다</h4>
+        <ul><li v-for="a in item.actions" :key="a">{{ a }}</li></ul>
+        <div v-if="!item.decision" class="btns">
+          <button @click="decide(item, true)">승인하고 계속</button>
+          <button class="reject" @click="decide(item, false)">거절 (조치 제외하고 재작성)</button>
+        </div>
+        <div v-else>→ {{ item.decision === 'approved' ? '승인됨' : '거절됨 — 재작성 중' }}</div>
+      </div>
+
+      <div v-else-if="item.kind === 'memo'" class="memo">{{ item.text }}</div>
 
       <details v-else-if="item.kind === 'prompt'" class="prompt-box">
         <summary>LLM에 전달된 최종 프롬프트 보기</summary>
@@ -115,6 +138,14 @@
 const { createApp, ref, reactive, nextTick } = Vue;
 
 const STEP_LABELS = {
+  ResearchDispatched: e => `조사 서브에이전트 분배: 메트릭 ${e.sub_agents.metrics} · 로그 ${e.sub_agents.logs} · 런북 ${e.sub_agents.runbook}`,
+  SubAgent: e => e.status === 'started' ? `${e.agent} 시작 (${(e.targets || []).join(', ')})` : null,
+  LogsCollected: e => `최근 로그 수집 (시스템: ${e.target}, ${e.lines}줄)`,
+  ResearchMerged: e => `조사 결과 병합 (${e.elapsed}s, 병렬)`,
+  ApprovalGranted: () => '운영자 승인 → 검수 진행',
+  ApprovalRejected: () => '운영자 거절 → 조치 제외하고 재작성',
+  ApprovalEscalated: () => '거절 상한 도달 → 조치 실행 금지 경고를 달아 검수로 진행',
+  ApprovalSkipped: e => e.reason === '위험 조치 없음' ? '위험 조치 없음 — 승인 생략' : null,
   PlanCreated: e => `계획 수립: 할 일 ${e.task_count}가지${e.targets?.length ? ` (시스템: ${e.targets.join(', ')})` : ''}`,
   GateApplied: e => e.removed_analysis_tasks ? `불필요한 작업 ${e.removed_analysis_tasks}건 제거` : null,
   TaskCompleted: e => (e.source === 'monitoring'
@@ -159,6 +190,19 @@ createApp({
       scrollToBottom();
 
       const url = `/chat/stream?message=${encodeURIComponent(text)}&thread_id=${encodeURIComponent(thread)}`;
+      consume(url, stepsItem);
+    }
+
+    // 승인/거절 버튼 → 같은 run을 이어서 스트리밍 (HITL resume)
+    function decide(item, approved) {
+      item.decision = approved ? 'approved' : 'rejected';
+      sending.value = true;
+      const stepsItem = reactive({ id: nextId++, kind: 'steps', steps: [] });
+      log.value.push(stepsItem);
+      consume(`/chat/approve/stream?thread_id=${encodeURIComponent(thread)}&approved=${approved}`, stepsItem);
+    }
+
+    function consume(url, stepsItem) {
       const es = new EventSource(url);
       let streamItem = null;
       let streamAttempt = null;   // write_node 재작성(attempt 증가) 시 새 말풍선으로 끊는다
@@ -167,6 +211,19 @@ createApp({
         if (event.data === '[DONE]') { es.close(); sending.value = false; return; }
         let e;
         try { e = JSON.parse(event.data); } catch { return; }
+
+        if (e.type === 'ApprovalRequired') {
+          log.value.push({ id: nextId++, kind: 'approval', actions: e.actions, decision: null });
+          streamItem = null; streamAttempt = null;
+          scrollToBottom();
+          return;
+        }
+        if (e.type === 'MemoryCompacted') {
+          log.value.push({ id: nextId++, kind: 'memo',
+            text: `🧠 대화가 길어져 과거 ${e.summarized}개 메시지를 요약(${e.summary_chars}자)으로 압축했습니다` });
+          scrollToBottom();
+          return;
+        }
 
         if (e.type === 'AnswerToken') {
           if (!streamItem || streamAttempt !== e.attempt) {
@@ -203,7 +260,7 @@ createApp({
       es.onerror = () => { es.close(); sending.value = false; };
     }
 
-    return { backendLabel, log, input, sending, logEl, onSubmit };
+    return { backendLabel, log, input, sending, logEl, onSubmit, decide };
   },
 }).mount('#app');
 </script>

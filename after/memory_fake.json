@@ -1,0 +1,105 @@
+{
+  "rows": [
+    {
+      "turn": 1,
+      "message": "제 이름은 민수입니다",
+      "reply": "안녕하세요, 민수님! 무엇을 도와드릴까요?",
+      "memory": null,
+      "total_messages": 2,
+      "summarized_messages": 0,
+      "history_messages": 2,
+      "history_chars": 34
+    },
+    {
+      "turn": 2,
+      "message": "안녕, 너는 누구야?",
+      "reply": "안녕하세요! 무엇을 도와드릴까요?",
+      "memory": null,
+      "total_messages": 4,
+      "summarized_messages": 0,
+      "history_messages": 4,
+      "history_chars": 63
+    },
+    {
+      "turn": 3,
+      "message": "오늘 날씨 어때?",
+      "reply": "안녕하세요! 무엇을 도와드릴까요?",
+      "memory": null,
+      "total_messages": 6,
+      "summarized_messages": 0,
+      "history_messages": 6,
+      "history_chars": 90
+    },
+    {
+      "turn": 4,
+      "message": "점심 메뉴 추천해줘",
+      "reply": "안녕하세요! 무엇을 도와드릴까요?",
+      "memory": null,
+      "total_messages": 8,
+      "summarized_messages": 0,
+      "history_messages": 8,
+      "history_chars": 118
+    },
+    {
+      "turn": 5,
+      "message": "우리 팀은 결제 서비스를 운영해",
+      "reply": "안녕하세요! 무엇을 도와드릴까요?",
+      "memory": null,
+      "total_messages": 10,
+      "summarized_messages": 0,
+      "history_messages": 10,
+      "history_chars": 153
+    },
+    {
+      "turn": 6,
+      "message": "지난주에 배포가 있었어",
+      "reply": "안녕하세요! 무엇을 도와드릴까요?",
+      "memory": {
+        "summarized": 8,
+        "summary_chars": 73,
+        "cost_usd": 0.000595
+      },
+      "total_messages": 12,
+      "summarized_messages": 8,
+      "history_messages": 5,
+      "history_chars": 149
+    },
+    {
+      "turn": 7,
+      "message": "모니터링은 어떻게 봐?",
+      "reply": "안녕하세요! 무엇을 도와드릴까요?",
+      "memory": null,
+      "total_messages": 14,
+      "summarized_messages": 8,
+      "history_messages": 7,
+      "history_chars": 179
+    },
+    {
+      "turn": 8,
+      "message": "고마워",
+      "reply": "안녕하세요! 무엇을 도와드릴까요?",
+      "memory": null,
+      "total_messages": 16,
+      "summarized_messages": 8,
+      "history_messages": 9,
+      "history_chars": 200
+    },
+    {
+      "turn": 9,
+      "message": "제 이름이 뭐였죠?",
+      "reply": "민수님이라고 말씀하셨어요. 무엇을 도와드릴까요?",
+      "memory": null,
+      "total_messages": 18,
+      "summarized_messages": 8,
+      "history_messages": 11,
+      "history_chars": 236
+    }
+  ],
+  "final": {
+    "total_messages": 18,
+    "summarized_messages": 8,
+    "history_messages": 11,
+    "history_chars": 236,
+    "summary": "사용자 이름: 민수 / 사용자 질문: 안녕, 너는 누구야? / 사용자 질문: 오늘 날씨 어때? / 사용자 질문: 점심 메뉴 추천해줘"
+  }
+}

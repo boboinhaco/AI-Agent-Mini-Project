@@ -1,0 +1,33 @@
+{
+  "auth-service": [
+    "WARN  [pool] connection pool usage 92% (max=100, active=92)",
+    "WARN  [http] p95 latency 2.4s exceeds threshold 1.0s (last 5m)",
+    "INFO  [deploy] no deployment in last 24h",
+    "ERROR [db] slow query 3.1s: SELECT * FROM sessions WHERE ..."
+  ],
+  "web-01": [
+    "INFO  [nginx] 200 OK avg 120ms (last 5m)",
+    "INFO  [health] all upstreams healthy"
+  ],
+  "payments-service": [
+    "WARN  [cpu] load average 7.8 on 4 cores",
+    "INFO  [deploy] v2.3.1 deployed 35m ago",
+    "WARN  [batch] settlement job started twice (duplicate scheduler trigger)",
+    "WARN  [http] instance payments-service-3 responding slow (p95 2.9s)"
+  ],
+  "cache-service": [
+    "WARN  [mem] heap 89% and climbing (+3%/h for 6h)",
+    "INFO  [deploy] v1.9.0 deployed 7h ago (added session cache without TTL)",
+    "WARN  [gc] full GC 12 times in last 10m"
+  ],
+  "gateway-service": [
+    "ERROR [upstream] timeout to payments-service (504) x41 in last 5m",
+    "WARN  [net] packet loss 3% on az-2 link",
+    "INFO  [config] no routing change in last 24h"
+  ],
+  "log-service": [
+    "ERROR [disk] /var/log 95% used (19G/20G)",
+    "WARN  [rotate] logrotate failed: no space left on device",
+    "INFO  [ingest] 2.1GB/h incoming (normal 0.8GB/h)"
+  ]
+}

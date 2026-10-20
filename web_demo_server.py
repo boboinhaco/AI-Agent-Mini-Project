@@ -46,18 +46,32 @@ async def proxy_chat(req: Request):
     return JSONResponse(r.json(), status_code=r.status_code)
 
 
-@app.get("/chat/stream")
-async def proxy_stream(message: str, thread_id: str = "web-demo"):
+def _relay(path: str, params: dict):
     async def relay():
         async with httpx.AsyncClient(timeout=None) as client:
-            async with client.stream(
-                "GET", f"{BACKEND}/chat/stream",
-                params={"message": message, "thread_id": thread_id},
-            ) as upstream:
+            async with client.stream("GET", f"{BACKEND}{path}", params=params) as upstream:
                 async for chunk in upstream.aiter_bytes():
                     yield chunk
-
     return StreamingResponse(relay(), media_type="text/event-stream")
+
+
+@app.get("/chat/stream")
+async def proxy_stream(message: str, thread_id: str = "web-demo"):
+    return _relay("/chat/stream", {"message": message, "thread_id": thread_id})
+
+
+@app.get("/chat/approve/stream")
+async def proxy_approve_stream(thread_id: str = "web-demo", approved: bool = True, comment: str = ""):
+    """HITL — 승인/거절 후 이어지는 스트림도 그대로 중계."""
+    return _relay("/chat/approve/stream",
+                  {"thread_id": thread_id, "approved": str(approved).lower(), "comment": comment})
+
+
+@app.get("/session/{thread_id}")
+async def proxy_session(thread_id: str):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        r = await client.get(f"{BACKEND}/session/{thread_id}")
+    return JSONResponse(r.json(), status_code=r.status_code)
 
 
 if __name__ == "__main__":

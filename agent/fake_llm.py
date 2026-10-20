@@ -21,6 +21,24 @@ class FakeLLM:
         return {"model": self.name, "tokens": tokens,
                 "usd": round(tokens / 1000 * self.usd_per_1k, 6)}
 
+    @traceable(run_type="llm", name="fake_llm.summarize")
+    async def summarize(self, previous: str, messages: list[dict]) -> tuple[str, dict]:
+        """결정론적 추출 요약 — 사용자 이름 같은 핵심 사실과 각 사용자 발화의 앞부분만 남긴다."""
+        facts = []
+        if previous:
+            facts.append(previous)
+        for m in messages:
+            if m["role"] != "user":
+                continue
+            name = re.search(r"제 이름은 (\S+?)입니다", m["content"])
+            if name:
+                facts.append(f"사용자 이름: {name.group(1)}")
+            else:
+                facts.append("사용자 질문: " + m["content"][:40].strip())
+        summary = " / ".join(dict.fromkeys(facts))
+        return summary, self._usage(str(messages), summary)
+
+
 
 class FastLLM(FakeLLM):
     """분류·계획 등 짧고 정형적인 단계 전담 (저비용)."""
@@ -76,12 +94,13 @@ class FastLLM(FakeLLM):
 
     @traceable(run_type="llm", name="fast_llm.chat")
     async def chat(self, query: str, history: list[dict], on_token=None) -> tuple[str, dict]:
-        """Wave 5의 direct 경로 + Wave 12 증명용 — 히스토리에서 이름을 기억해낸다.
+        """Wave 5의 direct 경로 + Wave 12 증명용 — 히스토리(원문 또는 요약)에서 이름을 기억해낸다.
 
         fake 백엔드는 실제 네트워크 호출이 없어 토큰 단위로 쪼갤 대상이 없다 —
         ollama_llm.py와 인터페이스(on_token 콜백)만 맞추고 결과를 한 번에 반환한다."""
         for msg in reversed(history):
-            m = re.search(r"제 이름은 (\S+?)입니다", msg.get("content", ""))
+            m = (re.search(r"제 이름은 (\S+?)입니다", msg.get("content", ""))
+                 or re.search(r"사용자 이름: (\S+)", msg.get("content", "")))
             if m and re.search(r"이름이 뭐", query):
                 reply = f"{m.group(1)}님이라고 말씀하셨어요. 무엇을 도와드릴까요?"
                 if on_token is not None:

@@ -10,6 +10,7 @@ import argparse
 import base64
 import json
 import subprocess
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -24,7 +25,8 @@ class CDP:
         self.proc = subprocess.Popen(
             [CHROME, "--headless=new", f"--remote-debugging-port={port}",
              "--window-size=1280,900", "--hide-scrollbars", "--no-first-run",
-             "--user-data-dir=/tmp/cdp-profile", "about:blank"],
+             f"--user-data-dir={tempfile.mkdtemp(prefix='cdp-profile-')}",   # 매번 새 프로필 — 캐시된 옛 HTML 방지
+             "--disk-cache-size=1", "about:blank"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(50):
             try:
@@ -36,6 +38,7 @@ class CDP:
         self.conn = ws.connect(page["webSocketDebuggerUrl"], max_size=50_000_000)
         self.n = 0
         self.send("Page.enable"); self.send("Runtime.enable")
+        self.send("Network.enable"); self.send("Network.setCacheDisabled", cacheDisabled=True)
 
     def send(self, method: str, **params):
         self.n += 1
@@ -73,12 +76,25 @@ SUBMIT_JS = """
 """
 
 
-def ask_and_wait(cdp: CDP, query: str, timeout: float = 600.0):
+APPROVE_JS = """
+(() => {
+  const btns = document.querySelectorAll('.approval:not(.decided) .btns button');
+  if (!btns.length) return false;
+  btns[%d].click(); return true;
+})()
+"""
+
+
+def ask_and_wait(cdp: CDP, query: str, timeout: float = 600.0, decision: str | None = None):
+    """decision: 'approve' | 'reject' | None — 승인 카드가 뜨면 해당 버튼을 눌러 이어간다."""
     cdp.eval(SUBMIT_JS % json.dumps(query))
     t0 = time.perf_counter()
     time.sleep(0.5)
     while time.perf_counter() - t0 < timeout:
-        if not cdp.eval("document.querySelector('button').disabled"):
+        if decision and cdp.eval(APPROVE_JS % (0 if decision == "approve" else 1)):
+            time.sleep(0.5)
+            continue
+        if not cdp.eval("document.querySelector('form button').disabled"):
             break
         time.sleep(0.5)
     time.sleep(0.5)
@@ -94,6 +110,8 @@ def main():
     ap.add_argument("--name", required=True)
     ap.add_argument("--query", action="append", required=True,
                     help="여러 번 주면 같은 대화창에서 순서대로 보낸다")
+    ap.add_argument("--decision", choices=["approve", "reject"], default=None,
+                    help="HITL 승인 카드가 뜨면 자동으로 누를 버튼")
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
 
@@ -103,7 +121,7 @@ def main():
         if args.name == "uc0_empty":
             cdp.screenshot(out / f"{args.name}.png"); print("saved", args.name); return
         for q in args.query:
-            took = ask_and_wait(cdp, q)
+            took = ask_and_wait(cdp, q, decision=args.decision)
             print(f"  '{q[:30]}...' {took}s")
         cdp.screenshot(out / f"{args.name}.png")
         print("saved", out / f"{args.name}.png")

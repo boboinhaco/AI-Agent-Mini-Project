@@ -1,34 +1,36 @@
 {
   "health": {
     "status": "ok",
-    "instance_id": 4541375248,
+    "instance_id": 4510605904,
     "creation_count": 1,
     "supervisor_version": "v2",
     "llm_backend": "ollama",
     "fast_llm": "ollama:qwen3:0.6b",
     "quality_llm": "ollama:qwen3:8b",
     "rag_embeddings": "OllamaEmbeddings",
-    "rag_docs": 6
+    "rag_docs": 6,
+    "hitl_enabled": true
   },
   "rows": [
     {
       "id": 1,
       "query": "payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요",
-      "latency_s": 48.84,
+      "latency_s": 45.71,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 0,
       "replan_rounds": 1,
       "retry_count": 1,
-      "parallel_elapsed": 0.36,
+      "parallel_elapsed": 0.37,
       "validation_attempts": 1,
-      "cost_usd": 0.006389,
-      "reply_len": 332,
+      "cost_usd": 0.006608,
+      "approvals": 1,
+      "reply_len": 456,
       "checks_passed": 4,
       "checks_total": 4,
       "investigated": "payments-service",
       "runbooks": "cpu-spike",
-      "langsmith_run_id": "01a157e9-7c58-752b-976e-1939eb9eb6a4",
+      "langsmith_run_id": "01a157f9-b5e6-70b9-999f-fb8b9d591d22",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -41,7 +43,7 @@
           "cpu-spike"
         ]
       },
-      "reply": "1) 모니터링 상태 확인: payments-service의 CPU 사용률 98.7% 및 메모리 58.8% 확인. 알림 'CPU 91% (threshold 80%)' 및 'payments-service-3 instance responding slow' 발생.  \n2) 로그 분석: 특이 패턴 없음. 반복 호출 또는 배치 작업 중복 실행 등 특정 요청 패턴 확인 불가.  \n3) 인스턴스 확장: CPU 90% 이상 지속 시 오토스케일링 그룹에서 1대 추가 확장.  \n- 추가 조치: 배포 직후 부하 증가 시 직전 배포 롤백 필요. 정상화 후 프로파일링 통해 핫스팟 코드 식별 및 최적화 작업 등록.",
+      "reply": "1) **CPU 사용률 확인 및 배포 시점 확인**: 모니터링에 따르면 CPU 사용률 94.2%로 임계치(80%)를 초과했으며, 최근 배포(v2.3.1)는 35분 전에 이루어졌습니다.  \n2) **요청 패턴 분석**: 로그에서 `settlement job started twice (duplicate scheduler trigger)`가 확인되어 배치 작업 중복 실행이 원인일 가능성이 높습니다. 이로 인해 처리량 증가 및 인스턴스(payments-service-3) 응답 지연(p95 2.9s)이 발생했습니다.  \n3) **인스턴스 확장 및 배포 롤백 검토**: CPU 90% 이상 지속 시 오토스케일링으로 인스턴스를 1대 추가해 부하 분산해야 하며, 배포 직후 발생한 문제라면 직전 배포를 롤백하고 원인 분석을 별도로 진행해야 합니다. 현재 상황에서는 중복 배치 작업 정리 후 확장으로 대응하는 것이 우선입니다.",
       "error": null,
       "events": [
         {
@@ -61,11 +63,36 @@
           "removed_analysis_tasks": 0
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 1,
+            "logs": 1,
+            "runbook": 0
+          }
+        },
+        {
+          "type": "LogsCollected",
+          "target": "payments-service",
+          "lines": 4,
+          "agent": "log_agent"
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-0",
           "source": "monitoring",
           "target": "payments-service",
-          "retries": 1
+          "retries": 1,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.67,
+          "agents": [
+            "logs",
+            "metrics",
+            "runbook:skip"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -77,11 +104,30 @@
           "rag_score": 0.7742
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 0,
+            "logs": 0,
+            "runbook": 1
+          }
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-gap-runbook",
           "source": "runbook",
           "target": "cpu-spike",
-          "retries": 0
+          "retries": 0,
+          "agent": "runbook_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs:skip",
+            "metrics:skip",
+            "runbook"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -95,7 +141,14 @@
         {
           "type": "DraftWritten",
           "attempt": 1,
-          "length": 332
+          "length": 456
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "배포 롤백",
+            "인스턴스 증설(스케일 아웃)"
+          ]
         },
         {
           "type": "Validation",
@@ -114,33 +167,43 @@
         "gate_removed": 0,
         "replan_rounds": 1,
         "retry_count": 1,
-        "parallel_elapsed": 0.36,
+        "parallel_elapsed": 0.37,
         "validation_attempts": 1,
-        "cost_usd": 0.006389,
+        "approval": {
+          "approved": true,
+          "actions": [
+            "배포 롤백",
+            "인스턴스 증설(스케일 아웃)"
+          ],
+          "comment": "auto"
+        },
+        "approval_rejections": 0,
+        "cost_usd": 0.006608,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157e9-7c58-752b-976e-1939eb9eb6a4"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a157f9-b5e6-70b9-999f-fb8b9d591d22"
       }
     },
     {
       "id": 2,
       "query": "cache-service 메모리 사용률이 계속 올라가고 있어요",
-      "latency_s": 94.42,
+      "latency_s": 100.94,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 0,
       "replan_rounds": 1,
       "retry_count": 0,
-      "parallel_elapsed": 0.36,
+      "parallel_elapsed": 0.37,
       "validation_attempts": 3,
-      "cost_usd": 0.016591,
-      "reply_len": 273,
+      "cost_usd": 0.019014,
+      "approvals": 3,
+      "reply_len": 288,
       "checks_passed": 4,
       "checks_total": 4,
       "investigated": "cache-service",
       "runbooks": "memory-leak",
-      "langsmith_run_id": "01a157ea-3b1d-79af-9061-de8b83de3286",
+      "langsmith_run_id": "01a157fb-4032-7979-8f5d-63163642865d",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -153,7 +216,7 @@
           "memory-leak"
         ]
       },
-      "reply": "1) 메모리 사용률 추세 확인: cache-service 메모리 사용률 92.4%로 6시간 이상 지속 상승 중(알림: memory usage climbing steadily over 6h).  \n2) OOM 직전 대응: 메모리 사용률 92.4%로 90% 이상에 해당하므로 즉시 재시작(임시 조치 기록). CPU 사용률 48.9% 유지.  \n3) 원인 분석: 힙 덤프/프로파일링 도구로 객체 누수 확인 필요. 최근 배포 패턴 점검 결과 특이 패턴 없음. 롤백 및 메모리 상한선 조정 미실시.",
+      "reply": "1) 메모리 사용률 추세 확인: cache-service 메모리 사용률 88.3%로 6시간 동안 3%/시간 증가 중(Heap 89% 경고).  \n2) OOM 위험 대응: 메모리 사용률 88.3%로 90% 미만이지만 'heap near limit' 경고 발생, 즉시 재시작으로 서비스 중단 방지(임시 조치 기록).  \n3) 원인 분석 및 대응: v1.9.0 배포 시 'session cache without TTL' 추가로 인해 캐시 누적 가능성 확인, 힙 덤프 분석 후 배포 롤백 및 컨테이너 메모리 상한선 재조정.",
       "error": null,
       "events": [
         {
@@ -173,11 +236,36 @@
           "removed_analysis_tasks": 0
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 1,
+            "logs": 1,
+            "runbook": 0
+          }
+        },
+        {
+          "type": "LogsCollected",
+          "target": "cache-service",
+          "lines": 3,
+          "agent": "log_agent"
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-0",
           "source": "monitoring",
           "target": "cache-service",
-          "retries": 0
+          "retries": 0,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs",
+            "metrics",
+            "runbook:skip"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -189,11 +277,30 @@
           "rag_score": 0.7665
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 0,
+            "logs": 0,
+            "runbook": 1
+          }
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-gap-runbook",
           "source": "runbook",
           "target": "memory-leak",
-          "retries": 0
+          "retries": 0,
+          "agent": "runbook_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs:skip",
+            "metrics:skip",
+            "runbook"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -207,7 +314,13 @@
         {
           "type": "DraftWritten",
           "attempt": 1,
-          "length": 303
+          "length": 260
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "서비스/프로세스 재시작"
+          ]
         },
         {
           "type": "Validation",
@@ -220,20 +333,34 @@
         {
           "type": "DraftWritten",
           "attempt": 2,
-          "length": 302
+          "length": 259
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "서비스/프로세스 재시작",
+            "배포 롤백"
+          ]
         },
         {
           "type": "Validation",
           "attempt": 2,
           "verdict": "불합격",
           "reasons": [
-            "수집된 수치를 그대로 인용하세요: cache-service(CPU 48.9%)."
+            "조사한 시스템 cache-service의 결과를 답변에서 언급하지 않았습니다."
           ]
         },
         {
           "type": "DraftWritten",
           "attempt": 3,
-          "length": 273
+          "length": 288
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "서비스/프로세스 재시작",
+            "배포 롤백"
+          ]
         },
         {
           "type": "Validation",
@@ -252,33 +379,43 @@
         "gate_removed": 0,
         "replan_rounds": 1,
         "retry_count": 0,
-        "parallel_elapsed": 0.36,
+        "parallel_elapsed": 0.37,
         "validation_attempts": 3,
-        "cost_usd": 0.016591,
+        "approval": {
+          "approved": true,
+          "actions": [
+            "서비스/프로세스 재시작",
+            "배포 롤백"
+          ],
+          "comment": "auto"
+        },
+        "approval_rejections": 0,
+        "cost_usd": 0.019014,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157ea-3b1d-79af-9061-de8b83de3286"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a157fb-4032-7979-8f5d-63163642865d"
       }
     },
     {
       "id": 3,
       "query": "log-service 디스크 공간이 부족하다는 알림이 왔어요",
-      "latency_s": 138.17,
+      "latency_s": 100.13,
       "route": "incident",
       "task_count": 2,
       "gate_removed": 1,
       "replan_rounds": 1,
       "retry_count": 0,
-      "parallel_elapsed": 0.36,
+      "parallel_elapsed": 0.37,
       "validation_attempts": 3,
-      "cost_usd": 0.021592,
-      "reply_len": 148,
+      "cost_usd": 0.018632,
+      "approvals": 3,
+      "reply_len": 358,
       "checks_passed": 4,
       "checks_total": 4,
       "investigated": "log-service",
       "runbooks": "disk-full",
-      "langsmith_run_id": "01a157eb-abf2-79a3-b3f4-9c67a0c1f458",
+      "langsmith_run_id": "01a157fc-c74d-7c87-86b5-77bd1a066127",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -291,7 +428,7 @@
           "disk-full"
         ]
       },
-      "reply": "1) 모니터링 상태 확인: log-service(CPU 19.5%, 메모리 34.8%), 디스크 사용률 95% 확인.  \n2) /var/log 로그 파일 정리 및 임시 파일 삭제로 즉시 공간 확보.  \n3) 디스크 공간 부족 시 볼륨 확장 또는 추가 스토리지 연결.",
+      "reply": "1) **디스크 사용률 확인**: log-service의 /var/log 디스크 사용률은 95% (19G/20G)로 임계 수준(90% 이상)을 초과함. 모니터링 상태는 degraded, CPU 18.2%, 메모리 34.1%로 확인됨.  \n2) **즉시 정리 조치**: 로그 파일 및 임시 파일을 우선 삭제하여 공간 확보. logrotate 실패 원인인 /var/log 공간 부족으로 인한 'no space left on device' 경고 발생.  \n3) **로그 생성 원인 분석 및 조치**: 로그 인가량 2.1GB/h(정상 0.8GB/h)로 비정상적으로 증가 중. 로그 레벨 조정 또는 로테이션 주기 단축을 통해 장기적 해결 방안 마련.",
       "error": null,
       "events": [
         {
@@ -311,11 +448,36 @@
           "removed_analysis_tasks": 1
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 1,
+            "logs": 1,
+            "runbook": 0
+          }
+        },
+        {
+          "type": "LogsCollected",
+          "target": "log-service",
+          "lines": 3,
+          "agent": "log_agent"
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-0",
           "source": "monitoring",
           "target": "log-service",
-          "retries": 0
+          "retries": 0,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs",
+            "metrics",
+            "runbook:skip"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -327,11 +489,30 @@
           "rag_score": 0.7587
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 0,
+            "logs": 0,
+            "runbook": 1
+          }
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-gap-runbook",
           "source": "runbook",
           "target": "disk-full",
-          "retries": 0
+          "retries": 0,
+          "agent": "runbook_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs:skip",
+            "metrics:skip",
+            "runbook"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -345,7 +526,13 @@
         {
           "type": "DraftWritten",
           "attempt": 1,
-          "length": 118
+          "length": 306
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "스토리지 볼륨 확장"
+          ]
         },
         {
           "type": "Validation",
@@ -358,20 +545,32 @@
         {
           "type": "DraftWritten",
           "attempt": 2,
-          "length": 264
+          "length": 373
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "파일/데이터 삭제"
+          ]
         },
         {
           "type": "Validation",
           "attempt": 2,
           "verdict": "불합격",
           "reasons": [
-            "수집된 수치를 그대로 인용하세요: log-service(CPU 19.5%)."
+            "수집된 수치를 그대로 인용하세요: log-service(CPU 18.2% / 메모리 34.1%)."
           ]
         },
         {
           "type": "DraftWritten",
           "attempt": 3,
-          "length": 148
+          "length": 358
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "파일/데이터 삭제"
+          ]
         },
         {
           "type": "Validation",
@@ -390,33 +589,42 @@
         "gate_removed": 1,
         "replan_rounds": 1,
         "retry_count": 0,
-        "parallel_elapsed": 0.36,
+        "parallel_elapsed": 0.37,
         "validation_attempts": 3,
-        "cost_usd": 0.021592,
+        "approval": {
+          "approved": true,
+          "actions": [
+            "파일/데이터 삭제"
+          ],
+          "comment": "auto"
+        },
+        "approval_rejections": 0,
+        "cost_usd": 0.018632,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157eb-abf2-79a3-b3f4-9c67a0c1f458"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a157fc-c74d-7c87-86b5-77bd1a066127"
       }
     },
     {
       "id": 4,
       "query": "gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요",
-      "latency_s": 40.09,
+      "latency_s": 29.44,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 0,
       "replan_rounds": 1,
       "retry_count": 0,
-      "parallel_elapsed": 0.36,
+      "parallel_elapsed": 0.37,
       "validation_attempts": 1,
-      "cost_usd": 0.006267,
-      "reply_len": 380,
+      "cost_usd": 0.005427,
+      "approvals": 0,
+      "reply_len": 257,
       "checks_passed": 2,
       "checks_total": 3,
       "investigated": "gateway-service",
       "runbooks": "network-timeout",
-      "langsmith_run_id": "01a157ed-c7a9-7fe8-aea5-24f0409fab82",
+      "langsmith_run_id": "01a157fc-c75c-7a2d-8c48-b0c3be883ed8",
       "checks": {
         "route_ok": true,
         "systems_ok": false,
@@ -428,7 +636,7 @@
           "network-timeout"
         ]
       },
-      "reply": "1) **상태 점검**: gateway-service 상태가 degraded로 확인됨( CPU 29.1%, 메모리 44.5%, 알림 2건: 'upstream timeout to payments-service (504)', 'network packet loss 3%').  \n2) **네트워크 경로 확인**: 504 Gateway Timeout 및 3% 패킷 손실로 인해 payments-service 호출이 타임아웃 발생. 방화벽/보안그룹 변경, 로드밸런서 헬스체크 실패 등 최근 변경 사항 점검 필요.  \n3) **임시 대응 및 재검토**: 타임아웃 임계값 상향 또는 해당 구간 우회 라우팅으로 임시 해결. 정상화 후 네트워크 경로 기록 및 헬스체크 주기, 재시도 정책 재검토.",
+      "reply": "1) **상태 점검**: gateway-service 모니터링 상태가 degraded로, CPU 32.3%, 메모리 46.2% 사용 중. 알림 2건 발생(504 타임아웃, 3% 패킷 손실).  \n2) **네트워크 분석**: az-2 링크에서 3% 패킷 손실 발생. upstream timeout 504 발생 횟수 41회(5분 내).  \n3) **대응 조치**: az-2 구간 우회 라우팅으로 전환 및 네트워크 경로 기록. 헬스체크 주기 및 재시도 정책 재검토.",
       "error": null,
       "events": [
         {
@@ -448,11 +656,36 @@
           "removed_analysis_tasks": 0
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 1,
+            "logs": 1,
+            "runbook": 0
+          }
+        },
+        {
+          "type": "LogsCollected",
+          "target": "gateway-service",
+          "lines": 3,
+          "agent": "log_agent"
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-0",
           "source": "monitoring",
           "target": "gateway-service",
-          "retries": 0
+          "retries": 0,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs",
+            "metrics",
+            "runbook:skip"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -464,11 +697,30 @@
           "rag_score": 0.7987
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 0,
+            "logs": 0,
+            "runbook": 1
+          }
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-gap-runbook",
           "source": "runbook",
           "target": "network-timeout",
-          "retries": 0
+          "retries": 0,
+          "agent": "runbook_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs:skip",
+            "metrics:skip",
+            "runbook"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -482,7 +734,11 @@
         {
           "type": "DraftWritten",
           "attempt": 1,
-          "length": 380
+          "length": 257
+        },
+        {
+          "type": "ApprovalSkipped",
+          "reason": "위험 조치 없음"
         },
         {
           "type": "Validation",
@@ -501,33 +757,36 @@
         "gate_removed": 0,
         "replan_rounds": 1,
         "retry_count": 0,
-        "parallel_elapsed": 0.36,
+        "parallel_elapsed": 0.37,
         "validation_attempts": 1,
-        "cost_usd": 0.006267,
+        "approval": null,
+        "approval_rejections": 0,
+        "cost_usd": 0.005427,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157ed-c7a9-7fe8-aea5-24f0409fab82"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a157fc-c75c-7a2d-8c48-b0c3be883ed8"
       }
     },
     {
       "id": 5,
       "query": "web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘",
-      "latency_s": 33.35,
+      "latency_s": 28.36,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 0,
       "replan_rounds": 1,
       "retry_count": 0,
-      "parallel_elapsed": 0.36,
+      "parallel_elapsed": 0.37,
       "validation_attempts": 1,
-      "cost_usd": 0.005342,
-      "reply_len": 253,
+      "cost_usd": 0.005061,
+      "approvals": 1,
+      "reply_len": 271,
       "checks_passed": 2,
       "checks_total": 3,
       "investigated": "web-01",
       "runbooks": "cpu-spike",
-      "langsmith_run_id": "01a157ee-644b-7ff5-ac2d-8ec0dd51c07c",
+      "langsmith_run_id": "01a157fd-a91b-7589-9b82-084bbd199778",
       "checks": {
         "route_ok": true,
         "systems_ok": false,
@@ -539,7 +798,7 @@
           "cpu-spike"
         ]
       },
-      "reply": "1) **모니터링 상태 확인**: web-01의 CPU 사용률은 40.8%로 정상 범위 내이며, 메모리 사용률 51.4%, 알림 0건으로 이상 없음.  \n2) **패턴 분석**: 최근 로그 및 트래픽 변화 확인 결과 특이 패턴 없음. auth-service 커넥션 풀 상태는 수집된 정보에 따라 확인되지 않음.  \n3) **대응 조치**: CPU 사용률이 90%를 넘지 않아 오토스케일링 필요 없음. 정상화 후 프로파일링을 통해 코드 최적화 계획 수립.",
+      "reply": "1) **모니터링 상태 확인**: web-01 CPU 사용률 39.6%, 메모리 50.8%, 알림 0건. CPU 사용률이 80% 이상으로 급증하지 않음.  \n2) **요청 패턴 분석**: 최근 로그에서 특이 패턴 없음. nginx 200 OK(avg 120ms), health 체크 정상. auth-service 커넥션 풀 상태 확인 필요.  \n3) **즉시 조치**: CPU 사용률 90% 미만이므로 오토스케일링 또는 롤백 불필요. 정상화 후 프로파일링 결과 기반 최적화 작업 등록.",
       "error": null,
       "events": [
         {
@@ -559,11 +818,36 @@
           "removed_analysis_tasks": 0
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 1,
+            "logs": 1,
+            "runbook": 0
+          }
+        },
+        {
+          "type": "LogsCollected",
+          "target": "web-01",
+          "lines": 2,
+          "agent": "log_agent"
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-0",
           "source": "monitoring",
           "target": "web-01",
-          "retries": 0
+          "retries": 0,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs",
+            "metrics",
+            "runbook:skip"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -575,11 +859,30 @@
           "rag_score": 0.6517
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 0,
+            "logs": 0,
+            "runbook": 1
+          }
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-gap-runbook",
           "source": "runbook",
           "target": "cpu-spike",
-          "retries": 0
+          "retries": 0,
+          "agent": "runbook_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs:skip",
+            "metrics:skip",
+            "runbook"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -593,7 +896,14 @@
         {
           "type": "DraftWritten",
           "attempt": 1,
-          "length": 253
+          "length": 271
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "배포 롤백",
+            "인스턴스 증설(스케일 아웃)"
+          ]
         },
         {
           "type": "Validation",
@@ -612,33 +922,43 @@
         "gate_removed": 0,
         "replan_rounds": 1,
         "retry_count": 0,
-        "parallel_elapsed": 0.36,
+        "parallel_elapsed": 0.37,
         "validation_attempts": 1,
-        "cost_usd": 0.005342,
+        "approval": {
+          "approved": true,
+          "actions": [
+            "배포 롤백",
+            "인스턴스 증설(스케일 아웃)"
+          ],
+          "comment": "auto"
+        },
+        "approval_rejections": 0,
+        "cost_usd": 0.005061,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157ee-644b-7ff5-ac2d-8ec0dd51c07c"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a157fd-a91b-7589-9b82-084bbd199778"
       }
     },
     {
       "id": 6,
       "query": "payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘",
-      "latency_s": 40.57,
+      "latency_s": 69.48,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 0,
       "replan_rounds": 1,
       "retry_count": 0,
-      "parallel_elapsed": 0.36,
+      "parallel_elapsed": 0.37,
       "validation_attempts": 1,
-      "cost_usd": 0.006103,
-      "reply_len": 471,
+      "cost_usd": 0.009397,
+      "approvals": 0,
+      "reply_len": 409,
       "checks_passed": 3,
       "checks_total": 4,
       "investigated": "payments-service",
       "runbooks": "cpu-spike",
-      "langsmith_run_id": "01a157ee-e68d-7cf0-a90f-703dabee2d00",
+      "langsmith_run_id": "01a157fd-a926-7248-abcb-3393a8b019a0",
       "checks": {
         "route_ok": true,
         "systems_ok": false,
@@ -651,7 +971,7 @@
           "cpu-spike"
         ]
       },
-      "reply": "1) **CPU 사용률 과부하**  \npayments-service의 CPU 사용률이 93.0%로 임계치(80%)를 초과하며, 'CPU 91% (threshold 80%)' 알림이 발생했으므로 **CPU 급증 대응 절차**를 적용해야 합니다.  \n\n2) **특정 인스턴스 응답 지연**  \n'payments-service-3 instance responding slow' 알림으로, 특정 인스턴스의 처리량 저하가 관찰되므로 **반복 호출 또는 배치 작업 중복 실행** 등 특정 요청 패턴을 로그에서 확인해야 합니다.  \n\n3) **오토스케일링 및 원인 분석**  \nCPU 사용률이 90% 이상 지속될 경우 해당 인스턴스를 오토스케일링 그룹에서 추가하여 부하 분산해야 하며, 배포 직후 부하 증가 시 **직전 배포 롤백**을 고려해야 합니다. 다만, cache-service의 상태 및 원인은 수집된 데이터에 없어 공통 원인 추정이 어렵습니다.",
+      "reply": "1) **중복 배치 작업 실행**: payments-service 로그에 'settlement job started twice (duplicate scheduler trigger)'로 인해 CPU 사용률이 급증한 것으로 확인됨. 이는 배치 작업 중복 실행으로 인한 부하 증가로 추정됨.  \n2) **인스턴스 응답 지연**: payments-service-3 인스턴스의 p95 응답 시간 2.9s로 인해 HTTP 처리량 저하 발생. CPU 사용률 90% 초과로 인해 인스턴스 부하 분산이 필요함.  \n3) **공통 원인 가능성**: payments-service의 CPU 과부하와 인스턴스 지연이 cache-service에도 영향을 미쳤을 가능성 있음. 공통된 네트워크/DB 리소스 사용 또는 배치 작업 중복 실행이 원인일 수 있음.",
       "error": null,
       "events": [
         {
@@ -671,11 +991,36 @@
           "removed_analysis_tasks": 0
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 1,
+            "logs": 1,
+            "runbook": 0
+          }
+        },
+        {
+          "type": "LogsCollected",
+          "target": "payments-service",
+          "lines": 4,
+          "agent": "log_agent"
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-0",
           "source": "monitoring",
           "target": "payments-service",
-          "retries": 0
+          "retries": 0,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs",
+            "metrics",
+            "runbook:skip"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -687,11 +1032,30 @@
           "rag_score": 0.75
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 0,
+            "logs": 0,
+            "runbook": 1
+          }
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-gap-runbook",
           "source": "runbook",
           "target": "cpu-spike",
-          "retries": 0
+          "retries": 0,
+          "agent": "runbook_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs:skip",
+            "metrics:skip",
+            "runbook"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -700,12 +1064,16 @@
         },
         {
           "type": "AnalysisCompleted",
-          "length": 9
+          "length": 8
         },
         {
           "type": "DraftWritten",
           "attempt": 1,
-          "length": 471
+          "length": 409
+        },
+        {
+          "type": "ApprovalSkipped",
+          "reason": "위험 조치 없음"
         },
         {
           "type": "Validation",
@@ -724,33 +1092,36 @@
         "gate_removed": 0,
         "replan_rounds": 1,
         "retry_count": 0,
-        "parallel_elapsed": 0.36,
+        "parallel_elapsed": 0.37,
         "validation_attempts": 1,
-        "cost_usd": 0.006103,
+        "approval": null,
+        "approval_rejections": 0,
+        "cost_usd": 0.009397,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157ee-e68d-7cf0-a90f-703dabee2d00"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a157fd-a926-7248-abcb-3393a8b019a0"
       }
     },
     {
       "id": 7,
       "query": "로그인 응답이 느려요, 원인 확인해주세요",
-      "latency_s": 71.05,
+      "latency_s": 40.01,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 0,
       "replan_rounds": 1,
       "retry_count": 0,
-      "parallel_elapsed": 0.36,
-      "validation_attempts": 2,
-      "cost_usd": 0.012349,
-      "reply_len": 376,
+      "parallel_elapsed": 0.37,
+      "validation_attempts": 1,
+      "cost_usd": 0.006808,
+      "approvals": 0,
+      "reply_len": 410,
       "checks_passed": 3,
       "checks_total": 3,
       "investigated": "auth-service",
       "runbooks": "high-latency",
-      "langsmith_run_id": "01a157ef-8507-7e59-8088-6034ad03ba6f",
+      "langsmith_run_id": "01a157fe-b88e-7d5c-add4-7aaef51f4468",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -762,7 +1133,7 @@
           "high-latency"
         ]
       },
-      "reply": "1) **모니터링 상태 확인**: auth-service의 p95 latency는 2.4s(임계치 1.0s 초과), 커넥션 풀 사용률 92%(임계치 90% 초과)로 지연 및 연결 부하 발생.  \n2) **커넥션 풀 대응**: 풀 크기 확장 또는 느린 쿼리/외부 호출 타임아웃 적용 필요(현재 사용률 92%로 비상 상태).  \n3) **지연 원인 분석**: auth-service 상태가 degraded(76.7% CPU, 60.3% 메모리)로, 리전/인스턴스별 집중 여부 확인 후 로드밸런서 제외 또는 캐시/읽기 복제본 분산 대응(5분 내 p95 1.0s 미만으로 회복 시).  \n4) **근본 원인 문서화**: 정상화 후 느린 쿼리 로그 분석 및 후속 최적화 티켓 등록.",
+      "reply": "1) **커넥션 풀 사용률 초과**  \n   - auth-service의 커넥션 풀 사용률 92% (max=100)로 풀 크기 확장 또는 느린 쿼리/외부 호출 타임아웃 적용 필요.  \n\n2) **p95 지연시간 초과**  \n   - 최근 5분 평균 p95 지연 2.4s (임계치 1.0s)로, 5분 내 개선되지 않으면 캐시 계층 또는 읽기 복제본으로 트래픽 분산.  \n\n3) **느린 쿼리 분석 및 최적화**  \n   - DB에서 3.1s 소요된 쿼리 `SELECT * FROM sessions WHERE ...` 분석 필요. 정상화 후 느린 쿼리 로그 기반 후속 최적화 티켓 등록.  \n\n**추가 요인**  \n- auth-service 상태=degraded, CPU 77.9%, 메모리 61.0% 사용으로 리소스 부족 가능성 있음.",
       "error": null,
       "events": [
         {
@@ -782,11 +1153,36 @@
           "removed_analysis_tasks": 0
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 1,
+            "logs": 1,
+            "runbook": 0
+          }
+        },
+        {
+          "type": "LogsCollected",
+          "target": "auth-service",
+          "lines": 4,
+          "agent": "log_agent"
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-0",
           "source": "monitoring",
           "target": "auth-service",
-          "retries": 0
+          "retries": 0,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs",
+            "metrics",
+            "runbook:skip"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -798,11 +1194,30 @@
           "rag_score": 0.7986
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 0,
+            "logs": 0,
+            "runbook": 1
+          }
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-gap-runbook",
           "source": "runbook",
           "target": "high-latency",
-          "retries": 0
+          "retries": 0,
+          "agent": "runbook_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs:skip",
+            "metrics:skip",
+            "runbook"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -816,24 +1231,15 @@
         {
           "type": "DraftWritten",
           "attempt": 1,
-          "length": 354
+          "length": 410
+        },
+        {
+          "type": "ApprovalSkipped",
+          "reason": "위험 조치 없음"
         },
         {
           "type": "Validation",
           "attempt": 1,
-          "verdict": "불합격",
-          "reasons": [
-            "조사한 시스템 auth-service의 결과를 답변에서 언급하지 않았습니다."
-          ]
-        },
-        {
-          "type": "DraftWritten",
-          "attempt": 2,
-          "length": 376
-        },
-        {
-          "type": "Validation",
-          "attempt": 2,
           "verdict": "합격",
           "reasons": []
         },
@@ -848,33 +1254,36 @@
         "gate_removed": 0,
         "replan_rounds": 1,
         "retry_count": 0,
-        "parallel_elapsed": 0.36,
-        "validation_attempts": 2,
-        "cost_usd": 0.012349,
+        "parallel_elapsed": 0.37,
+        "validation_attempts": 1,
+        "approval": null,
+        "approval_rejections": 0,
+        "cost_usd": 0.006808,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157ef-8507-7e59-8088-6034ad03ba6f"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a157fe-b88e-7d5c-add4-7aaef51f4468"
       }
     },
     {
       "id": 8,
       "query": "billing-service 응답이 느려요",
-      "latency_s": 116.67,
+      "latency_s": 156.09,
       "route": "incident",
       "task_count": 2,
       "gate_removed": 0,
       "replan_rounds": 1,
       "retry_count": 0,
-      "parallel_elapsed": 0.36,
-      "validation_attempts": 1,
-      "cost_usd": 0.005068,
-      "reply_len": 256,
+      "parallel_elapsed": 0.37,
+      "validation_attempts": 2,
+      "cost_usd": 0.012988,
+      "approvals": 0,
+      "reply_len": 346,
       "checks_passed": 4,
       "checks_total": 4,
       "investigated": "auth-service",
       "runbooks": "high-latency",
-      "langsmith_run_id": "01a157f0-9a95-7389-9f53-b9e062e82851",
+      "langsmith_run_id": "01a157ff-54da-7738-a255-fb606c042be7",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -887,7 +1296,7 @@
           "high-latency"
         ]
       },
-      "reply": "1) **커넥션 풀 사용률 92% 초과**로 인해 풀 크기 확장 또는 느린 쿼리/외부 호출 타임아웃 적용 필요.  \n2) **p95 latency 2.4s (threshold 1.0s)** 초과로, 5분 내 개선되지 않으면 캐시 계층 또는 읽기 복제본으로 트래픽 분산.  \n3) **auth-service 상태 degraded** 및 CPU 81.1%, 메모리 62.5% 사용으로 인한 리소스 부족 가능성 확인. 해당 인스턴스 로드밸런서에서 일시 제외 검토.",
+      "reply": "1) **커넥션 풀 및 p95 지연 확인**: auth-service 모니터링 상태는 degraded로, p95 지연시간 2.4s(임계치 1.0s 초과), 커넥션 풀 사용률 92%(max=100)로 확인됨. CPU 85.4%, 메모리 64.7% 사용 중.  \n2) **커넥션 풀 확장 및 타임아웃 적용**: 커넥션 풀 사용률 92%를 초과하므로 풀 크기 확장 또는 느린 쿼리/외부 호출에 타임아웃 적용.  \n3) **지연 분산 및 캐싱 검토**: 5분 내 p95가 1.0s 이하로 회복되지 않으면 캐시 계층 또는 읽기 복제본으로 트래픽 분산. 느린 쿼리(3.1s) 로그 분석 후 근본 원인 문서화 및 최적화 티켓 등록.",
       "error": null,
       "events": [
         {
@@ -907,11 +1316,36 @@
           "removed_analysis_tasks": 0
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 1,
+            "logs": 1,
+            "runbook": 0
+          }
+        },
+        {
+          "type": "LogsCollected",
+          "target": "auth-service",
+          "lines": 4,
+          "agent": "log_agent"
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-0",
           "source": "monitoring",
           "target": "auth-service",
-          "retries": 0
+          "retries": 0,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.38,
+          "agents": [
+            "logs",
+            "metrics",
+            "runbook:skip"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -923,11 +1357,30 @@
           "rag_score": 0.7891
         },
         {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 0,
+            "logs": 0,
+            "runbook": 1
+          }
+        },
+        {
           "type": "TaskCompleted",
           "id": "task-gap-runbook",
           "source": "runbook",
           "target": "high-latency",
-          "retries": 0
+          "retries": 0,
+          "agent": "runbook_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs:skip",
+            "metrics:skip",
+            "runbook"
+          ]
         },
         {
           "type": "ReplanCheck",
@@ -941,11 +1394,32 @@
         {
           "type": "DraftWritten",
           "attempt": 1,
-          "length": 256
+          "length": 335
+        },
+        {
+          "type": "ApprovalSkipped",
+          "reason": "위험 조치 없음"
         },
         {
           "type": "Validation",
           "attempt": 1,
+          "verdict": "불합격",
+          "reasons": [
+            "수집된 수치를 그대로 인용하세요: auth-service(CPU 85.4% / 메모리 64.7%)."
+          ]
+        },
+        {
+          "type": "DraftWritten",
+          "attempt": 2,
+          "length": 346
+        },
+        {
+          "type": "ApprovalSkipped",
+          "reason": "위험 조치 없음"
+        },
+        {
+          "type": "Validation",
+          "attempt": 2,
           "verdict": "합격",
           "reasons": []
         },
@@ -960,13 +1434,15 @@
         "gate_removed": 0,
         "replan_rounds": 1,
         "retry_count": 0,
-        "parallel_elapsed": 0.36,
-        "validation_attempts": 1,
-        "cost_usd": 0.005068,
+        "parallel_elapsed": 0.37,
+        "validation_attempts": 2,
+        "approval": null,
+        "approval_rejections": 0,
+        "cost_usd": 0.012988,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157f0-9a95-7389-9f53-b9e062e82851"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a157ff-54da-7738-a255-fb606c042be7"
       }
     },
     {
@@ -981,12 +1457,13 @@
       "parallel_elapsed": null,
       "validation_attempts": 0,
       "cost_usd": 7.4e-05,
+      "approvals": 0,
       "reply_len": 38,
       "checks_passed": 1,
       "checks_total": 1,
       "investigated": "",
       "runbooks": "",
-      "langsmith_run_id": "01a157f2-6251-7ceb-81cd-ff0cc3325313",
+      "langsmith_run_id": "01a15801-b691-72bc-841e-89ac5502b536",
       "checks": {
         "route_ok": true
       },
@@ -1011,17 +1488,19 @@
         "retry_count": 0,
         "parallel_elapsed": null,
         "validation_attempts": 0,
+        "approval": null,
+        "approval_rejections": 0,
         "cost_usd": 7.4e-05,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157f2-6251-7ceb-81cd-ff0cc3325313"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a15801-b691-72bc-841e-89ac5502b536"
       }
     },
     {
       "id": 10,
       "query": "제 이름은 민수입니다 → 제 이름이 뭐였죠?",
-      "latency_s": 2.59,
+      "latency_s": 2.56,
       "route": "chat",
       "task_count": 0,
       "gate_removed": 0,
@@ -1030,12 +1509,13 @@
       "parallel_elapsed": null,
       "validation_attempts": 0,
       "cost_usd": 6.1e-05,
+      "approvals": 0,
       "reply_len": 16,
       "checks_passed": 2,
       "checks_total": 2,
       "investigated": "",
       "runbooks": "",
-      "langsmith_run_id": "01a157f2-6f12-7f98-979c-dfaae17d1f85",
+      "langsmith_run_id": "01a15801-c33e-733f-b71d-5a082ee5ada5",
       "checks": {
         "route_ok": true,
         "memory_ok": true
@@ -1061,11 +1541,13 @@
         "retry_count": 0,
         "parallel_elapsed": null,
         "validation_attempts": 0,
+        "approval": null,
+        "approval_rejections": 0,
         "cost_usd": 6.1e-05,
         "llm_backend": "ollama",
         "supervisor_version": "v2",
-        "instance_id": 4541375248,
-        "langsmith_run_id": "01a157f2-6f12-7f98-979c-dfaae17d1f85"
+        "instance_id": 4510605904,
+        "langsmith_run_id": "01a15801-c33e-733f-b71d-5a082ee5ada5"
       }
     }
   ]

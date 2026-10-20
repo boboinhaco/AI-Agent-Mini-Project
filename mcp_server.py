@@ -5,6 +5,7 @@ FastAPI 백엔드(server.py)가 lifespan에서 이 파일을 subprocess(stdio)�
 프로세스가 살아 있는 동안 재사용한다 (Wave 1 싱글턴 + Wave 2 표준화의 결합).
 
 - Tool    get_monitoring_status : 호출마다 값이 달라지는 동적 조회 → Tool이 맞다
+- Tool    get_recent_logs       : 최근 로그 라인 조회 (log_agent 서브에이전트용)
 - Resource runbook://incident-response/{incident_type} : URI로 식별되는 정적 문서
 - Prompt  incident_analysis_prompt : 여러 Tool을 조합하는 표준 진단 절차를 강제
 """
@@ -51,6 +52,19 @@ def get_monitoring_status(system_name: str) -> SystemStatus:
         last_checked=datetime.now().isoformat(timespec="microseconds"),
         alerts=data.get("alerts", []),
     )
+
+
+class RecentLogs(BaseModel):
+    system_name: str = Field(description="시스템 이름")
+    lines: list[str] = Field(default_factory=list, description="최근 로그 라인 (최신순)")
+
+
+@mcp.tool()
+def get_recent_logs(system_name: str, limit: int = 5) -> RecentLogs:
+    """지정된 시스템의 최근 로그 라인을 조회합니다 (Research 서브그래프의 log_agent가 사용)."""
+    logs = json.loads((DATA_DIR / "logs.json").read_text())
+    lines = logs.get(system_name, [f"no logs for '{system_name}'"])
+    return RecentLogs(system_name=system_name, lines=lines[:limit])
 
 
 @mcp.resource("runbook://incident-response/{incident_type}")

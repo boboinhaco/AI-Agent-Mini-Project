@@ -44,9 +44,18 @@ QUERIES = [
 def post_chat(client: httpx.Client, base: str, message: str, thread_id: str) -> tuple[dict, float]:
     t0 = time.perf_counter()
     r = client.post(f"{base}/chat", json={"message": message, "thread_id": thread_id})
-    elapsed = round(time.perf_counter() - t0, 2)
     r.raise_for_status()
-    return r.json(), elapsed
+    data = r.json()
+    approvals = 0
+    while data.get("status") == "approval_required":   # HITL — 측정에서는 자동 승인
+        approvals += 1
+        r = client.post(f"{base}/chat/approve",
+                        json={"thread_id": thread_id, "approved": True, "comment": "auto"})
+        r.raise_for_status()
+        data = r.json()
+    data["approvals"] = approvals
+    elapsed = round(time.perf_counter() - t0, 2)
+    return data, elapsed
 
 
 def check(spec: dict, data: dict) -> dict:
@@ -113,6 +122,7 @@ def main():
                 "gate_removed": meta.get("gate_removed"), "replan_rounds": meta.get("replan_rounds"),
                 "retry_count": meta.get("retry_count"), "parallel_elapsed": meta.get("parallel_elapsed"),
                 "validation_attempts": meta.get("validation_attempts"), "cost_usd": meta.get("cost_usd"),
+                "approvals": data.get("approvals", 0),
                 "reply_len": len(data["reply"]),
                 "checks_passed": sum(bool_checks.values()), "checks_total": len(bool_checks),
                 "investigated": ",".join(checks.get("investigated", [])),
@@ -130,7 +140,7 @@ def main():
     (out / f"metrics_{args.label}.json").write_text(
         json.dumps({"health": health, "rows": rows}, ensure_ascii=False, indent=2))
     csv_cols = ["id", "query", "latency_s", "route", "task_count", "gate_removed", "replan_rounds",
-                "retry_count", "parallel_elapsed", "validation_attempts", "cost_usd", "reply_len",
+                "retry_count", "parallel_elapsed", "validation_attempts", "approvals", "cost_usd", "reply_len",
                 "checks_passed", "checks_total", "investigated", "runbooks"]
     with (out / f"metrics_{args.label}.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=csv_cols)
@@ -150,7 +160,8 @@ def main():
              f"- 총 cost_usd(가상 단가): {tot_cost:.6f}",
              f"- 정확도 체크 통과: {passed}/{total} ({passed/total*100:.0f}%)",
              f"- 검증 재작성 발생 쿼리: {sum(1 for r in rows if (r['validation_attempts'] or 0) > 1)}건",
-             f"- 재시도(retry) 총합: {sum(r['retry_count'] or 0 for r in rows)}", "",
+             f"- 재시도(retry) 총합: {sum(r['retry_count'] or 0 for r in rows)}",
+             f"- 운영자 승인(HITL) 요청 횟수: {sum(r.get('approvals', 0) for r in rows)}", "",
              "| # | 지연(s) | route | tasks | 검증시도 | cost | 조사 시스템 | runbook | 체크 |", "|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         failed = [k for k, v in r["checks"].items() if v is False]

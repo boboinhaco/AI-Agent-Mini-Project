@@ -1,22 +1,327 @@
-INFO:     Started server process [40816]
+INFO:     Started server process [41579]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8102 (Press CTRL+C to quit)
-INFO:     127.0.0.1:57400 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57404 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57407 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57979 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat/approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat/approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat/approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat/approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat/approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat/approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat/approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat/approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57980 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58541 - "GET /session/memory-ollama HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58740 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58748 - "GET /chat/stream?message=payments-service+%EA%B2%B0%EC%A0%9C+%EC%9D%91%EB%8B%B5%EC%9D%B4+%EB%8A%90%EB%A0%A4%EC%A7%80%EA%B3%A0+CPU%EA%B0%80+%EC%B9%98%EC%86%9F%EC%95%98%EC%96%B4%EC%9A%94%2C+%EC%9B%90%EC%9D%B8+%ED%99%95%EC%9D%B8%ED%95%B4%EC%A3%BC%EC%84%B8%EC%9A%94&thread_id=t-web-lsj50d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58794 - "GET /chat/approve/stream?thread_id=t-web-lsj50d&approved=true&comment= HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58815 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58823 - "GET /chat/stream?message=web-01+CPU+%EA%B8%89%EC%A6%9D%2C+auth-service+%EC%BB%A4%EB%84%A5%EC%85%98+%ED%92%80%EB%8F%84+%EA%B0%99%EC%9D%B4+%ED%99%95%EC%9D%B8%ED%95%B4%EC%A4%98&thread_id=t-web-4025l9 HTTP/1.1" 200 OK
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [40816]
+INFO:     Finished server process [41579]
+INFO:     Started server process [42366]
+INFO:     Waiting for application startup.
+ERROR:    Traceback (most recent call last):
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/routing.py", line 656, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+  File "/opt/homebrew/Cellar/python@3.11/3.11.15_4/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 78, in lifespan
+    backend, fast_llm, quality_llm = _build_llms()
+                                     ^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 54, in _build_llms
+    from agent.ollama_llm import OllamaFastLLM, OllamaQualityLLM
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/ollama_llm.py", line 134
+    "사용자가 밝힌 이름은 반드시 그대로 보존하라.
+    ^
+SyntaxError: unterminated string literal (detected at line 134)
+
+ERROR:    Application startup failed. Exiting.
+Task exception was never retrieved
+future: <Task finished name='Task-6' coro=<<async_generator_athrow without __name__>()> exception=RuntimeError('Attempted to exit cancel scope in a different task than it was entered in')>
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  | BaseExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/mcp/client/stdio.py", line 205, in stdio_client
+    |     yield read_stream, write_stream
+    | GeneratorExit
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/mcp/client/stdio.py", line 201, in stdio_client
+    async with anyio.create_task_group() as tg:
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 853, in __aexit__
+    if self.cancel_scope.__exit__(type(exc), exc, exc.__traceback__):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 464, in __exit__
+    raise RuntimeError(
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+INFO:     Started server process [42493]
+INFO:     Waiting for application startup.
+ERROR:    Traceback (most recent call last):
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/routing.py", line 656, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+  File "/opt/homebrew/Cellar/python@3.11/3.11.15_4/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 78, in lifespan
+    backend, fast_llm, quality_llm = _build_llms()
+                                     ^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 54, in _build_llms
+    from agent.ollama_llm import OllamaFastLLM, OllamaQualityLLM
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/ollama_llm.py", line 134
+    "사용자가 밝힌 이름은 반드시 그대로 보존하라.
+    ^
+SyntaxError: unterminated string literal (detected at line 134)
+
+ERROR:    Application startup failed. Exiting.
+INFO:     Started server process [42621]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8102 (Press CTRL+C to quit)
+INFO:     127.0.0.1:59093 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59095 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "GET /session/memory-ollama-e71773 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59096 - "POST /chat HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 103, in handle_async_request
+    return await self._connection.handle_async_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 136, in handle_async_request
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 106, in handle_async_request
+    ) = await self._receive_response_headers(**kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 177, in _receive_response_headers
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 32, in read
+    with map_exceptions(exc_map):
+  File "/opt/homebrew/Cellar/python@3.11/3.11.15_4/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1194, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/routing.py", line 678, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 2809, in app
+    await route.handle(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 1328, in handle
+    await super().handle(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/routing.py", line 284, in handle
+    await self.app(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 166, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 152, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 745, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 372, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 204, in chat
+    result, run_id = await _handle_chat(req.message, req.thread_id)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/server.py", line 180, in _handle_chat
+    result = await app.state.graph.ainvoke(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/main.py", line 4178, in ainvoke
+    async for chunk in self.astream(
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/main.py", line 3529, in astream
+    async for _ in runner.atick(
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/_runner.py", line 397, in atick
+    await arun_with_retry(
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/pregel/_retry.py", line 737, in arun_with_retry
+    return await task.proc.ainvoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 756, in ainvoke
+    input = await asyncio.create_task(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 522, in ainvoke
+    ret = await self.afunc(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/nodes/analysis.py", line 15, in analysis_node
+    summary, usage = await deps.fast_llm.analyze(state.get("collected", []))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/ollama_llm.py", line 233, in analyze
+    return await self._chat(system, facts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/agent/ollama_llm.py", line 88, in _chat
+    resp = await client.post(OLLAMA_URL, json=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1859, in post
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "/opt/homebrew/Cellar/python@3.11/3.11.15_4/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/choeinseo/Downloads/all_total_vue_student/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout
+During task with name 'analysis' and id '3a1294e0-524d-0599-7bd2-db8c24ef535b'
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42621]
+INFO:     Started server process [42720]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8102 (Press CTRL+C to quit)
+INFO:     127.0.0.1:59262 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /session/memory-ollama-c21375 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42720]

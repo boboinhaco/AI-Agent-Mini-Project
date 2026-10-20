@@ -86,6 +86,23 @@ class OpenAILLM:
                  "usd": round(tokens / 1000 * self.usd_per_1k, 6)}
         return content, usage
 
+    @traceable(run_type="llm", name="openai.summarize")
+    async def summarize(self, previous: str, messages: list[dict]) -> tuple[str, dict]:
+        system = ("당신은 대화 기록 요약기다. 이전 요약과 새 대화를 합쳐 아래 형식으로만 한국어로 답하라. "
+                  "사용자가 밝힌 이름은 반드시 그대로 보존하라.\n"
+                  "사용자 이름: <이름 또는 미상>\n"
+                  "주요 사실: <쉼표로 구분한 핵심 사실 3개 이내>\n"
+                  "진행 중인 요청: <있으면 한 줄, 없으면 없음>")
+        rendered = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
+        user = f"## 이전 요약\n{previous or '(없음)'}\n\n## 새 대화\n{rendered}"
+        try:
+            return await self._chat(system, user)
+        except httpx.HTTPError as e:   # 요약 실패는 치명적이지 않다 — 추출 요약으로 대체
+            fallback = (previous + " / " if previous else "") + " / ".join(
+                m["content"][:40] for m in messages if m["role"] == "user")
+            return fallback, {"model": self.name, "tokens": 0, "usd": 0.0, "fallback": type(e).__name__}
+
+
 
 class OpenAIFastLLM(OpenAILLM):
     """분류·계획·단순 대화 전담 (저비용 모델, 기본 gpt-4o-mini)."""
@@ -172,7 +189,18 @@ class OpenAIFastLLM(OpenAILLM):
         facts = "\n".join(
             f"- {d['system_name']}: 상태={d['status']}, CPU {d['cpu_percent']}%, "
             f"알림 {d['alerts']}" for d in mon) or "(모니터링 데이터 없음)"
-        return await self._chat(system, facts)
+        try:
+            return await self._chat(system, facts)
+        except httpx.HTTPError as e:   # 타임아웃 등 — 코드 레벨 비교로 대체 (fake_llm.analyze와 동일 규칙)
+            degraded = [d["system_name"] for d in mon if d.get("status") != "healthy"]
+            if len(degraded) >= 2:
+                text = f"{', '.join(degraded)} 복수 시스템이 동시에 저하됨 — 공유 의존성 등 공통 원인이 의심됨"
+            elif degraded:
+                text = f"{degraded[0]}만 단독 저하 — 연관 시스템은 정상, 국소 이슈로 추정"
+            else:
+                text = "특이 패턴 없음"
+            return text, {"model": self.name, "tokens": 0, "usd": 0.0, "fallback": type(e).__name__}
+
 
     @traceable(run_type="llm", name="openai_fast.chat")
     async def chat(self, query: str, history: list[dict], on_token=None) -> tuple[str, dict]:
@@ -210,6 +238,9 @@ class OpenAIQualityLLM(OpenAILLM):
                 facts.append(f"- 모니터링 {d['system_name']}: 상태={d['status']}, "
                              f"CPU {d['cpu_percent']}%, 메모리 {d['memory_percent']}%, "
                              f"알림 {len(d['alerts'])}건 {d['alerts']}")
+            elif c["source"] == "logs":
+                d = c["data"]
+                facts.append(f"- 최근 로그 {d['system_name']}:\n  " + "\n  ".join(d.get("lines", [])))
             elif c["source"] == "runbook":
                 facts.append(f"- runbook 발췌:\n{c['data'].strip()}")
             elif c["source"] == "analysis":

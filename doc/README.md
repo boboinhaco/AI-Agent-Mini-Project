@@ -261,3 +261,35 @@ Before 기준선은 [`before/README.md`](../before/README.md), After 측정은 `
 | 6 | fake 계획 | 목록 밖 시스템(billing-service)을 조사 대상으로 삼던 정규식을 KNOWN_SYSTEMS 클램프로 교체, 분석 요청 시 needs_analysis=True | `agent/fake_llm.py` |
 
 측정(회귀 쿼리 10개, 정확도 체크 통과 수): fake 7/32 → 32/32.
+
+## Mini-project 추가 기능 (2차 — 기능 추가)
+
+| # | 영역 | 무엇을 추가했나 | 파일 |
+|---|---|---|---|
+| 1 | 멀티 에이전트 | 단일 `research_node`를 **compiled subgraph**로 교체. `dispatch → (metrics_agent ∥ log_agent ∥ runbook_agent) → merge`. 세 서브에이전트는 같은 superstep에서 동시에 돌고 `Annotated[list, add]` 채널에 결과만 추가하며, merge가 task 상태·재시도·소요시간을 한 번에 정리한다(supervisor-of-supervisors). log_agent용으로 MCP Tool `get_recent_logs`와 `data/logs.json`을 추가 | `agent/subgraphs/research.py`, `mcp_server.py`, `data/logs.json` |
+| 2 | Human-in-the-loop | `write → approval → validate`. 초안에 재시작·롤백·failover·스케일 아웃·LB 제외·볼륨 확장·삭제 같은 조치가 있으면 `interrupt()`로 멈추고 `ApprovalRequired`를 보낸다. 승인 → 검수 진행, 거절 → 거절 사유를 피드백으로 write에 되돌려 재작성, 2회 거절 후에도 같은 조치가 나오면 "실행 금지" 경고를 달아 검수로 진행(무한 루프 방지). 체크포인터는 MemorySaver, run마다 고유 thread id | `agent/nodes/approval.py`, `agent/graph.py`, `server.py`(`/chat/approve`, `/chat/approve/stream`), `web_chat.html`(승인/거절 카드) |
+| 3 | 대화 요약 메모리 | 요약되지 않은 메시지가 10개를 넘으면 최근 4개만 원문으로 남기고 나머지를 `fast_llm.summarize()`로 요약해 `summaries` 테이블에 누적 저장. `session_store.load()`는 `[요약(system)] + 최근 원문`만 돌려준다. `/session/{thread_id}`로 원문 수·요약된 수·LLM에 실리는 이력 크기를 확인 | `agent/memory.py`, `agent/session_store.py`, `agent/*_llm.py`(`summarize`), `eval/memory_check.py` |
+
+### 그래프 (2차 이후)
+
+```mermaid
+flowchart TB
+    route -.->|chat| chat_answer --> END
+    route -.->|incident| plan --> gate --> research
+    subgraph research["research (compiled subgraph)"]
+        dispatch --> metrics_agent & log_agent & runbook_agent --> merge
+    end
+    research --> replan_check
+    replan_check -.->|부족: RAG로 runbook 선택| research
+    replan_check -.->|충분| analysis --> write --> approval
+    approval -.->|"승인 / 위험 조치 없음"| validate
+    approval -.->|"거절 (interrupt → resume)"| write
+    validate -.->|불합격| write
+    validate -.->|합격| finalize --> END
+```
+
+### 한계·트레이드오프
+
+- **서브그래프**: 노드 수가 늘어 LangSmith 트리가 깊어지고, 에이전트 3개가 각각 MCP를 호출해 호출 수가 늘었다(로그 조회는 모니터링 대상마다 1회 추가). 병렬이라 벽시계 시간은 늘지 않았다(fake 기준 0.36s 유지).
+- **HITL**: 위험 조치 감지는 정규식이라 "재시작은 하지 마세요" 같은 부정문도 승인을 요구한다(오탐). interrupt 상태는 MemorySaver에만 있어 서버 재시작 시 승인 대기 중인 run은 사라진다. 승인 대기 중 같은 thread로 새 질문을 보내면 이전 승인 요청은 폐기된다.
+- **요약 메모리**: 요약은 손실 압축이다 — fake 백엔드는 추출 요약(이름·질문 앞부분)만 남기고, 실모델 요약은 비결정적이라 "이름을 정확히 보존하라"는 지시에 의존한다. 요약 LLM 호출 비용이 10메시지마다 1회 추가된다.
