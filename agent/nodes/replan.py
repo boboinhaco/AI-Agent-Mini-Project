@@ -7,7 +7,7 @@ from langsmith import traceable
 
 from ..deps import SupervisorDeps
 from ..rag import build_query_text
-from ..state import AgentState, mentioned_systems
+from ..state import AgentState, mentioned_systems, relevant_systems
 
 MAX_ROUNDS = 2   # runbook 보완 1회 + 누락 시스템 보완 1회까지
 
@@ -16,6 +16,17 @@ MAX_ROUNDS = 2   # runbook 보완 1회 + 누락 시스템 보완 1회까지
 async def replan_check_node(state: AgentState, deps: SupervisorDeps) -> dict:
     collected = state.get("collected", [])
     rounds = state.get("replan_rounds", 0)
+    screened_event = None
+    if state.get("discovery") and rounds == 0:
+        # 전체 탐색 결과에서 증상과 맞는 시스템만 남긴다 — 증상은 질문만으로 RAG 분류
+        hit = await deps.rag.classify(build_query_text(state["query"], []))
+        keep = relevant_systems(collected, hit["incident_type"]) or \
+            [c["data"]["system_name"] for c in collected if c["source"] == "monitoring"]
+        before = {c["data"]["system_name"] for c in collected if c["source"] == "monitoring"}
+        collected = [c for c in collected
+                     if c["source"] not in ("monitoring", "logs") or c["data"]["system_name"] in keep]
+        screened_event = {"type": "SystemsScreened", "incident_type": hit["incident_type"],
+                          "kept": keep, "dropped": sorted(before - set(keep))}
     investigated = {c["data"].get("system_name") for c in collected if c["source"] == "monitoring"}
     planned = {t["target"] for t in state["tasks"] if t["kind"] == "monitoring"}
     # (안전망) 질문에 언급됐는데 조사도 계획도 안 된 시스템 — 계획 단계가 빠뜨린 경우
@@ -31,9 +42,11 @@ async def replan_check_node(state: AgentState, deps: SupervisorDeps) -> dict:
             gap_tasks.append({"id": "task-gap-runbook", "agent": "research", "kind": "runbook",
                               "target": hit["incident_type"], "status": "pending",
                               "rag": {"title": hit.get("title"), "score": hit.get("score")}})
+    extra = [screened_event] if screened_event else []
+    update = {"collected": collected} if screened_event else {}
     if not gap_tasks:
         verdict = {"type": "ReplanCheck", "round": rounds, "is_sufficient": True}
-        return {"events": state["events"] + [verdict]}
+        return {**update, "events": state["events"] + extra + [verdict]}
     runbook = next((t for t in gap_tasks if t["kind"] == "runbook"), None)
     verdict = {"type": "ReplanCheck", "round": rounds, "is_sufficient": False,
                "gap_task": ",".join(t["id"] for t in gap_tasks),
@@ -41,5 +54,5 @@ async def replan_check_node(state: AgentState, deps: SupervisorDeps) -> dict:
                "target": runbook["target"] if runbook else None,
                "rag_title": runbook["rag"]["title"] if runbook else None,
                "rag_score": runbook["rag"]["score"] if runbook else None}
-    return {"tasks": state["tasks"] + gap_tasks, "replan_rounds": rounds + 1,
-            "events": state["events"] + [verdict]}
+    return {**update, "tasks": state["tasks"] + gap_tasks, "replan_rounds": rounds + 1,
+            "events": state["events"] + extra + [verdict]}

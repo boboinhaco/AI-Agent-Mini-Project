@@ -1,11 +1,11 @@
 id,query,latency_s,route,task_count,gate_removed,replan_rounds,retry_count,parallel_elapsed,validation_attempts,approvals,cost_usd,reply_len,checks_passed,checks_total,investigated,runbooks
-1,"payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요",0.78,incident,3,1,1,0,0.36,2,2,0.000715,339,4,4,"payments-service,web-01",cpu-spike
-2,cache-service 메모리 사용률이 계속 올라가고 있어요,0.77,incident,3,1,1,0,0.36,2,2,0.000662,334,4,4,"cache-service,web-01",memory-leak
+1,"payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요",1.26,incident,3,1,1,1,0.37,2,2,0.000715,339,4,4,"payments-service,web-01",cpu-spike
+2,cache-service 메모리 사용률이 계속 올라가고 있어요,0.79,incident,3,1,1,0,0.37,2,2,0.000662,334,4,4,"cache-service,web-01",memory-leak
 3,log-service 디스크 공간이 부족하다는 알림이 왔어요,0.77,incident,3,1,1,0,0.36,2,2,0.000647,326,4,4,"log-service,web-01",disk-full
-4,gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요,0.77,incident,4,1,1,0,0.36,2,1,0.000819,393,3,3,"gateway-service,payments-service,web-01",network-timeout
-5,"web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘",0.79,incident,3,1,1,0,0.36,2,2,0.000683,334,3,3,"auth-service,web-01",high-latency
-6,payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘,0.78,incident,5,0,1,0,0.36,2,2,0.000894,393,4,4,"cache-service,payments-service,web-01",cpu-spike
-7,"로그인 응답이 느려요, 원인 확인해주세요",0.78,incident,3,1,1,0,0.37,2,2,0.000606,314,3,3,"auth-service,web-01",high-latency
-8,billing-service 응답이 느려요,0.77,incident,3,1,1,0,0.36,2,2,0.000612,315,4,4,"auth-service,web-01",high-latency
-9,"안녕, 너는 누구야?",0.01,chat,0,0,0,0,,0,0,3e-06,18,1,1,,
-10,제 이름은 민수입니다 → 제 이름이 뭐였죠?,0.01,chat,0,0,0,0,,0,0,3e-06,26,2,2,,
+4,gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요,0.79,incident,4,1,1,0,0.36,2,1,0.000819,393,3,3,"gateway-service,payments-service,web-01",network-timeout
+5,"web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘",0.78,incident,3,1,1,0,0.36,2,2,0.000683,334,3,3,"auth-service,web-01",high-latency
+6,payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘,0.79,incident,5,0,1,0,0.37,2,2,0.000894,393,4,4,"cache-service,payments-service,web-01",cpu-spike
+7,"로그인 응답이 느려요, 원인 확인해주세요",0.78,incident,7,1,1,0,0.36,2,2,0.000631,325,3,3,"auth-service,cache-service,gateway-service,log-service,payments-service,web-01",high-latency
+8,billing-service 응답이 느려요,0.8,incident,7,1,1,0,0.36,2,2,0.000552,273,4,4,"auth-service,cache-service,gateway-service,log-service,payments-service,web-01",cpu-spike
+9,"안녕, 너는 누구야?",0.01,chat,0,0,0,0,,0,0,6e-06,101,1,1,,
+10,제 이름은 민수입니다 → 제 이름이 뭐였죠?,0.02,chat,0,0,0,0,,0,0,3e-06,26,2,2,,

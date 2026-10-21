@@ -79,6 +79,21 @@ class OpenAIEmbeddings(Embeddings):
         return self.embed_documents([text])[0]
 
 
+def _lexical_overlap(query: str, doc: str) -> int:
+    """문서(제목+증상)의 어휘 조각이 질의에 몇 개 등장하는지 — 한국어는 조사 때문에 단어 전체가 아니라
+    앞 2글자 이상 접두(디스크, 메모리, 타임아웃…)로 본다. 너무 흔한 조각은 제외."""
+    stop = {"알림", "영문", "사용률", "초과", "증가", "상승", "실패", "확인", "대응", "절차", "runbook",
+            "high", "low", "status", "threshold"}
+    q = query.lower()
+    tokens = set()
+    for raw in re.split(r"[\s,./()\[\]:;·]+", doc.lower()):
+        raw = raw.strip("-%0123456789")
+        if len(raw) < 2 or raw in stop:
+            continue
+        tokens.add(raw[:3] if re.search(r"[가-힣]", raw) else raw)   # 한글은 앞 3글자, 영문은 전체
+    return sum(1 for t in tokens if t in q)
+
+
 def _section(text: str, heading: str) -> str:
     """'## {heading}' 아래 다음 '##'까지의 본문."""
     lines, grab, out = text.splitlines(), False, []
@@ -129,11 +144,18 @@ class RunbookIndex:
     async def search(self, text: str, k: int = 3) -> list[dict]:
         hits = await self.store.asimilarity_search_with_score(text, k=k)
         return [{"incident_type": d.metadata["incident_type"], "title": d.metadata["title"],
-                 "score": round(float(s), 4)} for d, s in hits]
+                 "score": round(float(s), 4),
+                 "lexical": _lexical_overlap(text, d.page_content)} for d, s in hits]
 
     async def classify(self, text: str) -> dict:
-        hits = await self.search(text, k=3)
-        return hits[0] if hits else {"incident_type": "db-down", "title": "(fallback)", "score": 0.0}
+        """하이브리드: 임베딩 상위 k개를 '증상 어휘 겹침(lexical)'으로 재정렬한다.
+        실측: nomic-embed-text는 한국어가 약해 "디스크 공간이 부족하다고 알람이 왔어"를 cpu-spike로
+        골랐다 — runbook 증상 섹션의 "디스크 공간 부족" 같은 어휘 일치가 더 믿을 만하다."""
+        hits = await self.search(text, k=self.size or 3)
+        if not hits:
+            return {"incident_type": "db-down", "title": "(fallback)", "score": 0.0}
+        best = max(hits, key=lambda h: (h["lexical"], h["score"]))
+        return best
 
 
 def build_query_text(query: str, collected: list[dict]) -> str:

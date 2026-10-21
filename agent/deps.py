@@ -15,4 +15,5 @@ class SupervisorDeps:
     session_store: Any   # Wave 12 — SQLite 세션 저장소
     version: str         # Wave 14 — SUPERVISOR_VERSION (v1/v2)
     rag: Any = None      # RAG — runbook 벡터 인덱스(RunbookIndex); replan_check가 사용
+    chat_llm: Any = None        # 대화(chat 경로) 전담 모델 — None이면 fast_llm
     hitl_enabled: bool = True   # Human-in-the-loop 승인 노드 사용 여부 (HITL_APPROVAL=0으로 끔)

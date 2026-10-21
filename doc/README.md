@@ -315,3 +315,17 @@ curl -s "localhost:8100/incidents/1?format=md"
 
 한계: 재계획 보충은 KNOWN_SYSTEMS(monitoring.json)에 있는 이름만 잡는다(목록 밖 이름은 여전히 폴백). LLM-as-judge는
 채점 모델 자체가 틀릴 수 있어 규칙 검사(validate)와 함께 봐야 하고, 실모델 채점은 쿼리당 10~20초가 더 든다.
+
+## 사용성 수정 (4차 — 실사용 피드백 반영)
+
+| 피드백 | 원인 | 수정 |
+|---|---|---|
+| 검수 반려 시 답변 말풍선이 두 개로 나옴, 반려 단계가 잘 안 보임 | 재작성(attempt 증가)마다 새 말풍선 생성 | 말풍선 하나에 내용 교체 + 상태 배지(✍️ 작성 중 / 🔍 검수 중 / ⚠️ 검수 반려 — 다시 작성). 반려 단계는 ⚠️ 강조. 최종 답변은 항상 맨 아래. 승인 후 재개 스트림은 이미 보낸 단계를 건너뜀 | `web_chat.html`, `server.py` |
+| "넌 누구야 뭘 할 수 있어"에 일반 AI 답변 | 대화 프롬프트에 역할이 없음 | 대화 시스템 프롬프트에 "운영 인시던트 대응 에이전트" 정체성과 안내 문구. fake도 동일 | `agent/*_llm.py` |
+| "난 홍길동이야"에 이전 장애 보고를 반복 | 소형 모델이 incident로 오분류, 시스템명 없으면 auth-service 폴백 | 라우팅 양방향 교정(`decide_route`): 장애 신호도 약한 신호도 없으면 chat. 이름 패턴 확장 | `agent/state.py`, `agent/nodes/route.py` |
+| "질문 몇 개 했어"에 장애 보고가 나옴 / 대화 품질 낮음 | 위와 동일 + 대화를 0.6b가 담당 | ollama는 품질 모델(8b)이 대화 담당(`deps.chat_llm`), 이력 질문은 user 메시지를 세어 답하도록 지시 | `server.py`, `agent/nodes/route.py` |
+| "디스크 공간이 부족하다고 알람이 왔어"에 auth-service 지연 답변 | 시스템명이 없으면 auth-service 고정 폴백 | **시스템 탐색**: 시스템명이 없으면 전체 시스템을 병렬 조회한 뒤 증상(RAG)과 맞는 시스템만 선별(`SystemDiscovery`→`SystemsScreened`). RAG는 임베딩 + 증상 어휘 겹침 하이브리드 재정렬(nomic의 한국어 약점 보완) | `agent/nodes/plan.py`, `agent/nodes/replan.py`, `agent/rag.py`, `agent/state.py` |
+| 답변이 길고 느림 | 8b 모델이 하위 목록까지 길게 작성 | write 프롬프트에 "항목당 1~2문장, 전체 7문장 이내, 하위 목록 금지" | `agent/*_llm.py` |
+
+실측(ollama): "넌 누구야 뭘 할 수 있어" → 역할 소개 · "난 홍길동이야" → 인사(chat) · "질문 몇 개 했어" → "user 메시지: 2개" ·
+"디스크 공간이 부족하다고 알람이 왔어" → 6개 시스템 탐색 → log-service 선별(disk-full) → 디스크 runbook 기반 답변.

@@ -11,6 +11,16 @@ from langsmith import traceable
 from .state import DEFAULT_SYSTEM, is_incident_query, mentioned_systems
 
 
+# "제 이름은 민수입니다" / "난 홍길동이야" / "나는 철수야" / "내 이름은 영희" 모두 잡는다
+NAME_RE = re.compile(r"(?:제|내) 이름은 (\S+?)(?:입니다|이야|야|예요|에요|$)|(?:난|나는) (\S+?)(?:이야|야|입니다|예요)")
+IDENTITY_REPLY = ("저는 운영 인시던트 대응 에이전트입니다. 운영 중 장애가 생겼거나 문제가 발생한 부분을 "
+                  "말씀해 주시면 모니터링 지표·최근 로그·대응 매뉴얼을 조회해 원인과 해결 방안을 알려드릴게요.")
+
+
+def _name_from(m) -> str:
+    return next(g for g in m.groups() if g)
+
+
 class FakeLLM:
     def __init__(self, name: str, usd_per_1k_tokens: float):
         self.name = name
@@ -30,9 +40,9 @@ class FakeLLM:
         for m in messages:
             if m["role"] != "user":
                 continue
-            name = re.search(r"제 이름은 (\S+?)입니다", m["content"])
+            name = NAME_RE.search(m["content"])
             if name:
-                facts.append(f"사용자 이름: {name.group(1)}")
+                facts.append(f"사용자 이름: {_name_from(name)}")
             else:
                 facts.append("사용자 질문: " + m["content"][:40].strip())
         summary = " / ".join(dict.fromkeys(facts))
@@ -98,17 +108,22 @@ class FastLLM(FakeLLM):
 
         fake 백엔드는 실제 네트워크 호출이 없어 토큰 단위로 쪼갤 대상이 없다 —
         ollama_llm.py와 인터페이스(on_token 콜백)만 맞추고 결과를 한 번에 반환한다."""
+        if re.search(r"누구|뭘 할 수|무엇을 할 수|뭐 할 수|할 수 있어", query):
+            reply = IDENTITY_REPLY
+            if on_token is not None:
+                on_token(reply)
+            return reply, self._usage(query, reply)
         for msg in reversed(history):
-            m = (re.search(r"제 이름은 (\S+?)입니다", msg.get("content", ""))
+            m = (NAME_RE.search(msg.get("content", ""))
                  or re.search(r"사용자 이름: (\S+)", msg.get("content", "")))
             if m and re.search(r"이름이 뭐", query):
-                reply = f"{m.group(1)}님이라고 말씀하셨어요. 무엇을 도와드릴까요?"
+                reply = f"{_name_from(m)}님이라고 말씀하셨어요. 무엇을 도와드릴까요?"
                 if on_token is not None:
                     on_token(reply)
                 return reply, self._usage(query, reply)
-        m = re.search(r"제 이름은 (\S+?)입니다", query)
+        m = NAME_RE.search(query)
         if m:
-            reply = f"안녕하세요, {m.group(1)}님! 무엇을 도와드릴까요?"
+            reply = f"안녕하세요, {_name_from(m)}님! 무엇을 도와드릴까요?"
         else:
             reply = "안녕하세요! 무엇을 도와드릴까요?"
         if on_token is not None:

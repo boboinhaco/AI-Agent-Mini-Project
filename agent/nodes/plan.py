@@ -2,7 +2,7 @@
 from langsmith import traceable
 
 from ..deps import SupervisorDeps
-from ..state import AgentState, add_cost, extract_system_name
+from ..state import KNOWN_SYSTEMS, AgentState, add_cost, extract_system_name, mentioned_systems
 
 
 @traceable(name="plan_node")
@@ -15,11 +15,20 @@ async def plan_node(state: AgentState, deps: SupervisorDeps) -> dict:
         server=prompt_server,
     )
     result, usage = await deps.fast_llm.plan(state["query"], procedure)
-    targets = [t["target"] for t in result["tasks"]
-               if t["agent"] == "research" and t.get("target")]
-    event = {"type": "PlanCreated", "task_count": len(result["tasks"]), "targets": targets}
-    return {"tasks": result["tasks"], "needs_analysis": result["needs_analysis"],
-            "cost_usd": add_cost(state, usage), "events": state["events"] + [event]}
+    tasks, events, discovery = result["tasks"], [], False
+    if not mentioned_systems(state["query"]):
+        # 시스템명이 없는 문의("디스크 공간이 부족하다고 알람이 왔어") — 기본 시스템(auth-service)으로
+        # 폴백하면 엉뚱한 진단이 나온다(실측). 전체 시스템을 병렬로 훑고 replan_check가 증상과 맞는
+        # 시스템만 남긴다(SystemsScreened).
+        discovery = True
+        others = [t for t in tasks if t["agent"] != "research"]
+        tasks = [{"id": f"task-{i}", "agent": "research", "kind": "monitoring",
+                  "target": name, "status": "pending"} for i, name in enumerate(sorted(KNOWN_SYSTEMS))] + others
+        events.append({"type": "SystemDiscovery", "targets": sorted(KNOWN_SYSTEMS)})
+    targets = [t["target"] for t in tasks if t["agent"] == "research" and t.get("target")]
+    events.append({"type": "PlanCreated", "task_count": len(tasks), "targets": targets})
+    return {"tasks": tasks, "needs_analysis": result["needs_analysis"], "discovery": discovery,
+            "cost_usd": add_cost(state, usage), "events": state["events"] + events}
 
 
 @traceable(name="gate_node")

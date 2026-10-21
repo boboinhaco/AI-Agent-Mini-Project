@@ -46,6 +46,15 @@
   }
   .steps .step::before { content: "⏳ "; }
   .steps .step.done::before { content: "✓ "; color: #7ee787; }
+  .steps .step.warn { color: #f0c674; font-weight: 600; font-size: 13px; }
+  .steps .step.warn::before { content: "⚠️ "; }
+  .steps .step.warn.done::before { content: "⚠️ "; }
+  .bubble .status {
+    display: inline-block; margin-bottom: 8px; padding: 3px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; background: #3a3a52; color: #c3c3e0;
+  }
+  .bubble .status.validating { background: #2b3a52; color: #9ecbff; }
+  .bubble .status.rejected { background: #4a3a1a; color: #f0c674; }
   .prompt-box {
     flex-shrink: 0;   /* #log가 스크롤 영역이 되면서(min-height:0) <details>가 flex
                          자식으로서 내용 없이 찌그러지는 걸 방지 */
@@ -98,11 +107,11 @@
       </div>
 
       <div v-else-if="item.kind === 'steps'" class="steps">
-        <div v-for="(step, i) in item.steps" :key="i" class="step" :class="{ done: step.done }">{{ step.text }}</div>
+        <div v-for="(step, i) in item.steps" :key="i" class="step" :class="{ done: step.done, warn: step.warn }">{{ step.text }}</div>
       </div>
 
       <div v-else-if="item.kind === 'agent'" class="row agent">
-        <div class="bubble">{{ item.text }}</div>
+        <div class="bubble"><div v-if="item.status" class="status" :class="item.statusKind">{{ item.status }}</div>{{ item.text }}</div>
       </div>
 
       <div v-else-if="item.kind === 'approval'" class="approval" :class="{ decided: item.decision }">
@@ -156,8 +165,11 @@ const STEP_LABELS = {
       ? `모니터링 지표 확인 (시스템: ${e.target})`
       : `대응 매뉴얼(runbook) 조회 (장애유형: ${e.target})`) + (e.retries ? ' (재시도 성공)' : ''),
   ReplanCheck: e => e.is_sufficient ? null : `정보 부족 → 장애유형 "${e.target}"로 추가 조사`,
-  DraftWritten: e => `답변 초안 작성 (시도 ${e.attempt})`,
-  Validation: e => e.verdict === '합격' ? '검수 통과' : '검수 반려 → 다시 작성',
+  SystemDiscovery: e => `시스템명이 없어 전체 ${e.targets.length}개 시스템을 탐색`,
+  SystemsScreened: e => `증상(${e.incident_type})과 맞는 시스템 선별: ${e.kept.join(', ')}${e.dropped.length ? ` (${e.dropped.length}개 제외)` : ''}`,
+  DraftWritten: e => `답변 초안 작성 완료 (시도 ${e.attempt}) → 검수 중`,
+  Validation: e => e.verdict.startsWith('합격') ? '검수 통과'
+      : { text: `검수 반려 (시도 ${e.attempt}) → 다시 작성 중: ${(e.reasons || []).join(' ')}`, warn: true },
   Finalize: () => '최종 답변 완성',
 };
 
@@ -198,17 +210,23 @@ createApp({
     }
 
     // 승인/거절 버튼 → 같은 run을 이어서 스트리밍 (HITL resume)
+    let pendingBubble = null;   // 승인 대기 중인 답변 말풍선 — 재개 후에도 같은 말풍선을 이어 쓴다
+
     function decide(item, approved) {
       item.decision = approved ? 'approved' : 'rejected';
       sending.value = true;
       const stepsItem = reactive({ id: nextId++, kind: 'steps', steps: [] });
       log.value.push(stepsItem);
-      consume(`/chat/approve/stream?thread_id=${encodeURIComponent(thread)}&approved=${approved}`, stepsItem);
+      consume(`/chat/approve/stream?thread_id=${encodeURIComponent(thread)}&approved=${approved}`, stepsItem, pendingBubble);
+      pendingBubble = null;
     }
 
-    function consume(url, stepsItem) {
+    function approvedLabel(url) { return url.includes('approved=true') ? '✅ 승인됨 → 검수 중…' : '↩️ 거절됨 → 다시 작성 중'; }
+
+    function consume(url, stepsItem, reuseBubble = null) {
       const es = new EventSource(url);
-      let streamItem = null;
+      let streamItem = reuseBubble;
+      if (streamItem) { streamItem.status = approvedLabel(url); streamItem.statusKind = 'validating'; }
       let streamAttempt = null;   // write_node 재작성(attempt 증가) 시 새 말풍선으로 끊는다
 
       es.onmessage = (event) => {
@@ -219,6 +237,8 @@ createApp({
         if (e.type === 'ApprovalRequired') {
           stepsItem.steps.forEach(s => s.done = true);
           log.value.push({ id: nextId++, kind: 'approval', actions: e.actions, decision: null });
+          if (streamItem) { streamItem.status = '⏸ 운영자 승인 대기'; streamItem.statusKind = 'rejected'; }
+          pendingBubble = streamItem;
           streamItem = null; streamAttempt = null;
           scrollToBottom();
           return;
@@ -231,24 +251,40 @@ createApp({
         }
 
         if (e.type === 'AnswerToken') {
-          if (!streamItem || streamAttempt !== e.attempt) {
-            streamItem = reactive({ id: nextId++, kind: 'agent', text: '' });
+          if (!streamItem) {
+            streamItem = reactive({ id: nextId++, kind: 'agent', text: '', status: null, statusKind: '' });
             log.value.push(streamItem);
+          }
+          if (streamAttempt !== e.attempt) {   // 재작성 — 새 말풍선 대신 같은 말풍선의 내용을 교체
+            streamItem.text = '';
             streamAttempt = e.attempt;
+            streamItem.status = e.attempt > 1 ? `✍️ 다시 작성 중 (시도 ${e.attempt})` : '✍️ 작성 중';
+            streamItem.statusKind = '';
           }
           streamItem.text += e.delta;
           scrollToBottom();
           return;
         }
+        if (e.type === 'DraftWritten' && streamItem) {
+          streamItem.status = '🔍 검수 중…'; streamItem.statusKind = 'validating';
+        }
+        if (e.type === 'Validation' && streamItem) {
+          if (e.verdict.startsWith('합격')) { streamItem.status = null; }
+          else { streamItem.status = `⚠️ 검수 반려 — 다시 작성합니다 (${(e.reasons || [])[0] || ''})`; streamItem.statusKind = 'rejected'; }
+        }
 
         if (e.type === 'FinalAnswer') {
           stepsItem.steps.forEach(s => s.done = true);   // 모든 단계 완료 표시
-          if (e.incident_id) log.value.push({ id: nextId++, kind: 'report', incidentId: e.incident_id });
           if (!streamItem) {
             streamItem = reactive({ id: nextId++, kind: 'agent', text: '' });
             log.value.push(streamItem);
           }
           streamItem.text = e.reply;   // 토큰 합산 결과와 서버의 최종 텍스트를 일치시킨다
+          streamItem.status = null;
+          // 승인 카드·재작성 단계가 말풍선 뒤에 쌓였으면 최종 답변을 맨 아래로 옮긴다 (답변은 항상 하나, 항상 마지막)
+          const at = log.value.indexOf(streamItem);
+          if (at >= 0 && at !== log.value.length - 1) { log.value.splice(at, 1); log.value.push(streamItem); }
+          if (e.incident_id) log.value.push({ id: nextId++, kind: 'report', incidentId: e.incident_id });
           if (e.prompt) log.value.push({ id: nextId++, kind: 'prompt', text: e.prompt });
           streamItem = null;
           streamAttempt = null;
@@ -260,8 +296,9 @@ createApp({
         if (!fn) return;
         const label = fn(e);
         if (!label) return;
+        const item = typeof label === 'string' ? { text: label, warn: false } : label;
         stepsItem.steps.forEach(s => s.done = true);   // 새 단계가 오면 이전 단계는 끝난 것
-        stepsItem.steps.push(reactive({ text: label, done: false }));
+        stepsItem.steps.push(reactive({ ...item, done: false }));
         scrollToBottom();
       };
 

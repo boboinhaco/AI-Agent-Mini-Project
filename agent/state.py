@@ -27,8 +27,22 @@ DEFAULT_SYSTEM = "auth-service"
 # chat으로 보냈던 문제의 수정 지점.
 INCIDENT_PATTERN = re.compile(
     r"장애|진단|다운|지연|급증|느려|느림|타임아웃|timeout|메모리|디스크|cpu|레이턴시|latency|"
-    r"응답\s*없|에러|오류|504|500|저하|알림|경보|incident|티켓|확인해|원인|분석해",
+    r"응답\s*없|에러|오류|504|500|저하|알림|알람|경보|경고|incident|티켓|원인|분석해|"
+    r"먹통|죽었|접속이?\s*안|안\s*돼|안됨|실패|이상해|부족",
     re.IGNORECASE)
+# 모델이 incident라고 했을 때만 인정하는 약한 신호 — "난 홍길동이야" 같은 잡담을 장애로 보내지 않기 위함
+SOFT_INCIDENT_PATTERN = re.compile(r"서비스|시스템|서버|배포|db|api|인스턴스|노드|확인해", re.IGNORECASE)
+
+# 증상(incident_type) ↔ 모니터링 알림 문구 키워드 — 시스템명이 없는 문의에서 전체 시스템을 훑은 뒤
+# 증상과 맞는 시스템만 남길 때 쓴다 (알림 문구는 기계가 만든 영문이라 키워드 매칭이 안정적)
+ALERT_KEYWORDS = {
+    "cpu-spike": ["cpu", "load"],
+    "memory-leak": ["memory", "heap", "oom"],
+    "disk-full": ["disk", "space"],
+    "high-latency": ["latency", "pool", "slow"],
+    "network-timeout": ["timeout", "packet", "504", "network"],
+    "db-down": ["down", "database", "db "],
+}
 
 
 def mentioned_systems(query: str) -> list[str]:
@@ -40,6 +54,28 @@ def mentioned_systems(query: str) -> list[str]:
 def is_incident_query(query: str) -> bool:
     """코드 레벨 라우팅 판단: 알려진 시스템명이 언급되거나 장애 표현이 있으면 incident."""
     return bool(mentioned_systems(query)) or bool(INCIDENT_PATTERN.search(query))
+
+
+def decide_route(query: str, model_route: str) -> tuple[str, str | None]:
+    """모델 판단 + 코드 교정. 반환: (route, 교정 내용 또는 None).
+    - 코드가 장애 신호를 찾으면 모델이 뭐라 했든 incident
+    - 모델이 incident라 해도 장애 신호도 약한 신호도 없으면 chat (소형 모델이 "난 홍길동이야"를 장애로 보낸 실측 사례)"""
+    if is_incident_query(query):
+        return "incident", ("chat→incident" if model_route != "incident" else None)
+    if model_route == "incident" and SOFT_INCIDENT_PATTERN.search(query):
+        return "incident", None
+    return "chat", ("incident→chat" if model_route == "incident" else None)
+
+
+def relevant_systems(collected: list[dict], incident_type: str) -> list[str]:
+    """전체 탐색 결과 중 증상과 맞는 시스템 — 알림 키워드 매칭, 없으면 저하(degraded/down) 시스템."""
+    keywords = ALERT_KEYWORDS.get(incident_type, [])
+    mon = [c["data"] for c in collected if c.get("source") == "monitoring"]
+    matched = [d["system_name"] for d in mon
+               if any(k in (" ".join(d.get("alerts", [])) + " " + d.get("status", "")).lower() for k in keywords)]
+    if matched:
+        return matched
+    return [d["system_name"] for d in mon if d.get("status") not in ("healthy", "unknown")]
 
 
 def extract_system_name(query: str) -> str:
@@ -65,6 +101,7 @@ class AgentState(TypedDict, total=False):
     validation_feedback: str
     approval: dict | None
     approval_rejections: int
+    discovery: bool
     final: str
     last_prompt: str
     cost_usd: float

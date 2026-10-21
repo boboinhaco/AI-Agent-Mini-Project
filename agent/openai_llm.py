@@ -102,6 +102,26 @@ class OpenAILLM:
                 m["content"][:40] for m in messages if m["role"] == "user")
             return fallback, {"model": self.name, "tokens": 0, "usd": 0.0, "fallback": type(e).__name__}
 
+    @traceable(run_type="llm", name="openai.chat")
+    async def chat(self, query: str, history: list[dict], on_token=None) -> tuple[str, dict]:
+        """ollama_llm.py와 인터페이스(on_token 콜백)만 맞춘다 — OpenAI Chat Completions를
+        아직 stream=True로 호출하지 않아 토큰 단위 중계는 하지 않고 완성된 응답을 한 번에
+        전달한다."""
+        system = ("당신은 '운영 인시던트 대응 에이전트'다. 운영 중 장애·성능 저하·알림 같은 문제를 말하면 "
+                  "모니터링 지표·최근 로그·대응 매뉴얼을 조회해 원인과 해결 방안을 안내하는 것이 역할이다. "
+                  "자기소개나 '무엇을 할 수 있냐'는 질문에는 이 역할을 한두 문장으로 설명하고, "
+                  "'운영 중 장애가 생겼거나 문제가 발생한 부분을 말씀해 주시면 해결 방안을 알려드리겠다'고 안내하라. "
+                  "그 외 가벼운 대화는 한국어 한두 문장으로 간결히 답하라. 대화 이력(요약 포함)에서 사용자가 "
+                  "밝힌 이름이 있으면 정확히 기억해 답하라. '내가 질문 몇 개 했어' 같은 대화 이력에 관한 "
+                  "질문은 아래 대화 이력의 user 메시지를 직접 세어 숫자로 답하라. 이전 장애 보고를 반복하지 마라.")
+        rendered = "\n".join(f"{m['role']}: {m['content']}" for m in history[-10:])
+        user = (f"## 지금까지의 대화\n{rendered or '(없음)'}\n\n"
+                f"## 사용자의 새 메시지\n{query}")
+        content, usage = await self._chat(system, user)
+        usage["prompt"] = f"[SYSTEM]\n{system}\n\n[USER]\n{user}"
+        if on_token is not None:
+            on_token(content)
+        return content, usage
 
 
 class OpenAIFastLLM(OpenAILLM):
@@ -211,21 +231,6 @@ class OpenAIFastLLM(OpenAILLM):
             return text, {"model": self.name, "tokens": 0, "usd": 0.0, "fallback": type(e).__name__}
 
 
-    @traceable(run_type="llm", name="openai_fast.chat")
-    async def chat(self, query: str, history: list[dict], on_token=None) -> tuple[str, dict]:
-        """ollama_llm.py와 인터페이스(on_token 콜백)만 맞춘다 — OpenAI Chat Completions를
-        아직 stream=True로 호출하지 않아 토큰 단위 중계는 하지 않고 완성된 응답을 한 번에
-        전달한다."""
-        system = ("당신은 간결한 한국어 비서다. 한두 문장으로 답하라. "
-                  "대화 이력에서 사용자가 밝힌 이름이 있으면 정확히 기억해 답하라.")
-        rendered = "\n".join(f"{m['role']}: {m['content']}" for m in history[-10:])
-        user = (f"## 지금까지의 대화\n{rendered or '(없음)'}\n\n"
-                f"## 사용자의 새 메시지\n{query}")
-        content, usage = await self._chat(system, user)
-        usage["prompt"] = f"[SYSTEM]\n{system}\n\n[USER]\n{user}"
-        if on_token is not None:
-            on_token(content)
-        return content, usage
 
 
 class OpenAIQualityLLM(OpenAILLM):
@@ -239,7 +244,8 @@ class OpenAIQualityLLM(OpenAILLM):
         전달한다."""
         system = ("당신은 ICT 운영 보고 작성자다. 수집된 사실만 사용해 한국어로 "
                   "간결한 대응 보고를 작성하라. 반드시 '1) ... 2) ... 3) ...' 형식의 "
-                  "번호 절차로 답하고, 수치는 수집된 값을 그대로 인용하라.")
+                  "번호 절차로 답하고, 수치는 수집된 값을 그대로 인용하라. 항목당 1~2문장, 전체 7문장 이내로 "
+                  "간결하게 쓰고 하위 목록은 만들지 마라.")
         facts = []
         for c in collected:
             if c["source"] == "monitoring":

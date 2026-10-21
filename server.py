@@ -86,6 +86,7 @@ async def lifespan(app: FastAPI):
         session_store=SqliteSessionStore(),
         version=os.environ.get("SUPERVISOR_VERSION", "v2"),
         rag=rag,
+        chat_llm=quality_llm if backend == "ollama" else None,   # 로컬 0.6b는 대화 품질이 낮아 8b가 대화 담당
         hitl_enabled=os.environ.get("HITL_APPROVAL", "1") != "0",
     )
     app.state.deps = deps
@@ -270,6 +271,10 @@ async def _stream_graph(graph_input, run_id: str, thread_id: str, message: str):
     deps = app.state.deps
     seen, final, last_prompt, interrupted = 0, "", None, None
     last_state: dict = {}
+    if isinstance(graph_input, Command):   # 승인 후 재개 — 이미 보낸 이벤트는 건너뛴다 (단계 중복 표시 방지)
+        snapshot = await app.state.graph.aget_state(_run_config(run_id))
+        seen = len((snapshot.values or {}).get("events", []))
+        last_state.update(snapshot.values or {})
     async for mode, payload in app.state.graph.astream(
             graph_input, config=_run_config(run_id), stream_mode=["updates", "custom"]):
         if mode == "custom":
