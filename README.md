@@ -23,7 +23,7 @@
 7. [프로젝트 구조](#7-프로젝트-구조)
 8. [측정 방법 (재현)](#8-측정-방법-재현)
 9. [한계와 트레이드오프](#9-한계와-트레이드오프)
-10. [남은 과제](#10-남은-과제)
+10. [남은 과제 처리 (3차)](#10-남은-과제-처리-3차)
 11. [기술 스택](#11-기술-스택)
 
 ---
@@ -40,34 +40,11 @@ LLM 자리는 `fake`(결정론 스텁) / `ollama`(로컬 qwen3) / `openai`(gpt-4
 
 ## 2. 아키텍처
 
-```mermaid
-flowchart TB
-    Browser["브라우저 (web_chat.html, Vue 3)"] -->|same-origin| Proxy["web_demo_server.py (:8600)"]
-    Proxy --> API["server.py — FastAPI (:8100)<br/>/chat · /chat/stream · /chat/approve · /session"]
-    API --> Graph
+![아키텍처](doc/images/architecture.svg)
 
-    subgraph Graph["agent/graph.py — LangGraph (SUPERVISOR_VERSION=v2)"]
-        route -.->|chat| chat_answer
-        route -.->|incident| plan --> gate --> research
-        subgraph research["research 서브그래프 (멀티 에이전트)"]
-            dispatch --> metrics_agent & log_agent & runbook_agent --> merge
-        end
-        research --> replan_check
-        replan_check -.->|"부족 → RAG로 runbook 선택"| research
-        replan_check -.->|충분| analysis --> write --> approval
-        approval -.->|"승인 / 위험 조치 없음"| validate
-        approval -.->|"거절 (interrupt → resume)"| write
-        validate -.->|불합격| write
-        validate -.->|합격| finalize
-    end
-
-    research --> MCP["agent/mcp_client.py — MCP 다중 세션 (stdio)"]
-    MCP --> Ops["mcp_server.py (ops)<br/>Tool: get_monitoring_status · get_recent_logs<br/>Resource: runbook://… · Prompt: incident_analysis_prompt"]
-    MCP --> Docs["mcp_server_docs.py (docs, decoy)"]
-    replan_check --> RAG["agent/rag.py — runbook 벡터 인덱스<br/>(InMemoryVectorStore + 임베딩)"]
-    API --> Session["SQLite session.db<br/>messages + summaries(요약 메모리)"]
-    Graph --> LS["LangSmith trace"]
-```
+- 위쪽 행은 요청 경로(브라우저 → 프록시 → FastAPI → SQLite), 가운데 큰 상자는 LangGraph 파이프라인, 아래 행은 그래프가 호출하는 외부 구성요소(MCP 서버들, RAG 인덱스, 데이터, LangSmith, LLM 백엔드)입니다.
+- 점선 상자 `research`는 compiled subgraph로, metrics·log·runbook 에이전트 셋이 같은 단계에서 병렬로 돌고 merge가 정리합니다.
+- 아래로 꺾여 돌아가는 선 세 개가 자기 교정 루프입니다: replan_check → research(누락 시스템·runbook 보충), approval → write(운영자 거절), validate → write(검증 불합격).
 
 핵심 설계 원칙은 "모델의 판단을 그대로 믿지 않고, 코드로 검증 가능한 결정은 코드가 내린다"입니다.
 gate(불필요 task 제거), replan(누락 보완), validate(수치 인용 검사), approval(사람 승인)이 그 방어선입니다.
@@ -135,7 +112,9 @@ curl -s -X POST localhost:8100/chat/approve -H 'Content-Type: application/json' 
 | 6 | 검증이 "30자 이상 + `1)` 포함"만 검사 — 수치를 지어내도 통과 | `agent/graph.py`(before 스냅샷) `validate_node` |
 | 7 | 338줄 `graph.py` 한 파일에 노드 10개, LLM 백엔드 2개에 같은 보정 코드 중복 | `before/env/line_counts.txt` |
 
-개선 전 그래프: ![](before/env/graph_v2.png)
+개선 전 그래프 (가로 배치로 다시 그림, 원본은 `before/env/graph_v2.png`):
+
+![개선 전 그래프](doc/images/graph_before.svg)
 
 ## 5. 무엇을 바꿨나 (수정/개선 + 추가)
 
@@ -165,16 +144,18 @@ curl -s -X POST localhost:8100/chat/approve -H 'Content-Type: application/json' 
 
 ### 수치 (같은 쿼리 10개, `after/summary_*.md`)
 
-| 지표 | Before | After |
-|---|---|---|
-| fake 정확도 | 7 / 32 | **32 / 32** |
-| ollama 정확도 | 24 / 29 | **29 / 32** |
-| ollama 서버 오류 | 2건 | **0건** |
-| RAG 단독 분류 (8케이스) | 키워드 규칙 5/8 수준 | **8 / 8** (해싱·nomic 모두) |
-| ollama 총 지연 | 292s | 575s |
-| ollama 검증 반려→재작성 | 0건 | 3건 |
-| HITL 승인 요청 | — | 8회 |
-| 요약 메모리 (9턴 테스트) | 이력 전부 전달 | 12번째 메시지에서 8개 요약, 이력 10 → 5개, 이름 회상 성공 |
+| 지표 | Before | After 2차 | After 3차 (남은 과제 처리) |
+|---|---|---|---|
+| fake 정확도 | 7 / 32 | **32 / 32** | **32 / 32** |
+| ollama 정확도 | 24 / 29 | 29 / 32 | **32 / 32** (두 시스템 질문 q4·q5·q6 해결) |
+| ollama 서버 오류 | 2건 | **0건** | **0건** |
+| RAG 단독 분류 (8케이스) | 키워드 규칙 5/8 수준 | **8 / 8** | 8 / 8 |
+| ollama 총 지연 | 292s | 575s | 657s (조사 시스템이 늘어난 만큼) |
+| ollama 검증 반려→재작성 | 0건 | 3건 | 4건 |
+| HITL 승인 요청 | — | 8회 | 8회 |
+| LLM-as-judge (수치 인용·지어내기 없음·조치 구체성, 3점 만점 × 8건) | — | — | **21 / 24** (7건 만점, 1건 채점 모델 타임아웃) |
+| 단위 테스트 | 없음 | 없음 | **pytest 32개 통과** |
+| 요약 메모리 (9턴 테스트) | 이력 전부 전달 | 12번째 메시지에서 8개 요약, 이력 10 → 5개 | 동일, 이름 회상 성공 |
 
 지연이 늘어난 것은 ① 검증이 실제로 반려해 재작성이 일어나고, ② 무응답 모델을 90초 기다렸다 복구하며,
 ③ 로그 조회가 추가됐기 때문입니다. 정확도·안정성과 맞바꾼 비용입니다.
@@ -189,6 +170,9 @@ curl -s -X POST localhost:8100/chat/approve -H 'Content-Type: application/json' 
 | HITL 승인 카드 (승인) | HITL 거절 → 재작성 → 2회 후 경고 종료 |
 |---|---|
 | ![](after/screens/fake_uc2_incident_approve.png) | ![](after/screens/fake_uc5_reject.png) |
+
+3차: 두 시스템 모두 조사(gateway + payments) · 단계 완료 ✓ 표시 · 인시던트 리포트 저장
+![](after/screens/fake_uc6_done_marks_report.png)
 
 ## 7. 프로젝트 구조
 
@@ -244,7 +228,34 @@ Ollama 측정 중에는 다른 Ollama 요청을 동시에 보내지 마세요 �
   MemorySaver에만 있어 서버 재시작 시 승인 대기 중인 run은 사라진다.
 - **요약 메모리**: 손실 압축이다. 소형 모델(0.6b)은 이름을 뭉개는 것이 실측돼 요약은 품질 모델이 맡는다(10메시지마다 1회).
 
-## 10. 기술 스택
+## 10. 남은 과제 처리 (3차)
+
+2차까지 남겨 뒀던 항목을 모두 처리했다(커밋 `남은 과제 처리`).
+
+| 과제 | 처리 | 증거 |
+|---|---|---|
+| 두 시스템을 언급해도 첫 번째만 조사 | plan 정규화가 쿼리에 언급된 시스템을 보충하고, replan_check가 "언급됐지만 조사·계획되지 않은 시스템"을 gap task로 추가(안전망) | ollama q4·q5·q6 조사 시스템 2개씩, 정확도 29 → **32/32** |
+| UI 진행 표시가 ⏳로 남음 | 다음 단계·최종 답변·승인 요청이 오면 이전 단계를 ✓로 표시 | `after/screens/fake_uc6_done_marks_report.png` |
+| 단위 테스트 | pytest 32개 — 라우팅 헬퍼, RAG 분류, 검증 규칙·위험 조치 감지, 그래프 통합(fake LLM + FakeMCP, HITL interrupt/resume, 재계획 보충), 요약 메모리·리포트 | `tests/`, `.venv/bin/python -m pytest -q` |
+| LLM-as-judge 평가 | `eval/judge.py` — 답변이 실측 수치(모니터링 + 로그)를 정확히 인용했는지, 지어내지 않았는지, 조치가 구체적인지 품질 모델이 0/1 채점. fake는 규칙 채점 | `after/judge_ollama.md` 21/24, `after/judge_fake.md` 24/24 |
+| 인시던트 리포트 저장 | 진단이 끝나면 타임라인·수집 사실·최종 답변을 Markdown으로 `incidents` 테이블에 저장. `GET /incidents`, `GET /incidents/{id}?format=md`, 채팅 UI에 리포트 링크 | `agent/report.py`, 리포트 예시는 `after/README.md` |
+
+새로 생긴 한계: 재계획 보충은 monitoring.json에 있는 시스템명만 잡는다. LLM-as-judge는 채점 모델이 틀리거나
+(로그 사실을 지어냈다고 오판한 사례) 긴 프롬프트에서 타임아웃될 수 있어(q5) 규칙 검사와 함께 봐야 한다.
+
+### 실사용 피드백 반영 (4차)
+
+채팅 화면에서 직접 써 보고 나온 문제 6가지를 고쳤다. 상세는 [doc/README.md](doc/README.md) "사용성 수정" 절.
+
+- 검수 반려 시 답변이 두 개로 보이던 것 → **말풍선 하나**에 상태 배지(작성 중 / 검수 중 / 검수 반려 — 다시 작성), 반려 단계 ⚠️ 강조
+- "넌 누구야" → 운영 인시던트 대응 에이전트로서 역할 소개
+- "난 홍길동이야", "질문 몇 개 했어"가 장애 파이프라인을 타던 것 → 라우팅 양방향 교정, 대화는 품질 모델(8b) 담당
+- "디스크 공간이 부족하다고 알람이 왔어"가 auth-service 지연으로 답하던 것 → **시스템명이 없으면 전체 시스템 탐색 후 증상과 맞는 시스템 선별**, RAG 하이브리드 재정렬
+- 단위 테스트 32 → 40개
+
+![](after/screens/ollama_uc7_disk_single_bubble.png)
+
+## 11. 기술 스택
 
 Python 3.11 · FastAPI · LangGraph 1.x · LangChain Core (InMemoryVectorStore) · LangSmith · fastmcp / mcp SDK ·
 httpx · SQLite · Ollama (qwen3:0.6b, qwen3:8b, nomic-embed-text) · OpenAI API (선택) · Vue 3 (CDN)
