@@ -13,7 +13,7 @@
     {
       "turn": 2,
       "message": "안녕, 너는 누구야?",
-      "reply": "안녕하세요! 저는 민수입니다. 어떻게 도움을 받실 수 있나요?",
+      "reply": "안녕하세요, 저는 민수입니다. 어떻게 도움을 받실 수 있나요?",
       "memory": null,
       "total_messages": 4,
       "summarized_messages": 0,
@@ -23,83 +23,83 @@
     {
       "turn": 3,
       "message": "오늘 날씨 어때?",
-      "reply": "오늘 날씨는 어때요? 🌤️",
+      "reply": "오늘은 흑색 날씨입니다. 🌤",
       "memory": null,
       "total_messages": 6,
       "summarized_messages": 0,
       "history_messages": 6,
-      "history_chars": 109
+      "history_chars": 110
     },
     {
       "turn": 4,
       "message": "점심 메뉴 추천해줘",
-      "reply": "점심 메뉴 추천해줘! 🍱요청하신 메뉴를 알려주시면 더 나은 추천을 드릴 수 있습니다.",
+      "reply": "점심 메뉴 추천해줘요! 🍱요리 추천해 드릴 수 있어요!",
       "memory": null,
       "total_messages": 8,
       "summarized_messages": 0,
       "history_messages": 8,
-      "history_chars": 166
+      "history_chars": 150
     },
     {
       "turn": 5,
       "message": "나는 서울에 살아",
-      "reply": "네, 서울이 거리에 있어 맛있고 다양한 음식이 있어요. 어떻게 도움을 받실 수 있나요? 😊",
+      "reply": "네, 서울에 살고 있어요. 어떻게 도움을 받실 수 있나요? 😊",
       "memory": null,
       "total_messages": 10,
       "summarized_messages": 0,
       "history_messages": 10,
-      "history_chars": 225
+      "history_chars": 193
     },
     {
       "turn": 6,
       "message": "취미는 등산이야",
-      "reply": "안녕하세요! 산악을 좋아하는지 알려주시면 더 나은 도움을 드릴 수 있습니다. 🏞️",
+      "reply": "내가 산을 떠나고 있어요. 산을 떠나는 것처럼 도움을 받실 수 있어요! 🏞️",
       "memory": {
         "summarized": 8,
-        "summary_chars": 93,
-        "cost_usd": 0.002695
+        "summary_chars": 81,
+        "cost_usd": 0.00287
       },
       "total_messages": 12,
       "summarized_messages": 8,
       "history_messages": 5,
-      "history_chars": 216
+      "history_chars": 185
     },
     {
       "turn": 7,
       "message": "주말에 뭐 하면 좋을까?",
-      "reply": "주말에 산악을 좋아하는지 알려주시면 더 나은 도움을 드릴 수 있습니다. 🏞️",
+      "reply": "주말에 산을 떠나는 것처럼 도움을 받을 수 있어요! 🏞️",
       "memory": null,
       "total_messages": 14,
       "summarized_messages": 8,
       "history_messages": 7,
-      "history_chars": 271
+      "history_chars": 229
     },
     {
       "turn": 8,
       "message": "고마워",
-      "reply": "감사합니다! 더 나은 도움을 드릴 수 있어요. 😊",
+      "reply": "감사합니다! 😊",
       "memory": null,
       "total_messages": 16,
       "summarized_messages": 8,
       "history_messages": 9,
-      "history_chars": 301
+      "history_chars": 240
     },
     {
       "turn": 9,
       "message": "제 이름이 뭐였죠?",
-      "reply": "네, 저는 민수입니다. 😊",
+      "reply": "제 이름은 민수입니다. 산을 떠나는 것처럼 도움을 받을 수 있어요! 🏞️",
       "memory": null,
       "total_messages": 18,
       "summarized_messages": 8,
       "history_messages": 11,
-      "history_chars": 325
+      "history_chars": 290
     }
   ],
   "final": {
     "total_messages": 18,
     "summarized_messages": 8,
     "history_messages": 11,
-    "history_chars": 325,
-    "summary": "사용자 이름: 민수  \n주요 사실: 안녕하세요, 이름은 민수입니다, 날씨와 점심 메뉴에 대해 물어봤습니다  \n진행 중인 요청: 점심 메뉴 추천 요청 (추가 정보 필요)"
+    "history_chars": 290,
+    "summary": "사용자 이름: 민수  \n주요 사실: 민수가 자기 이름을 밝힘, 날씨에 대한 질문, 점심 메뉴 추천 요청  \n진행 중인 요청: 점심 메뉴 추천 요청"
   }
 }

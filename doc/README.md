@@ -293,3 +293,25 @@ flowchart TB
 - **서브그래프**: 노드 수가 늘어 LangSmith 트리가 깊어지고, 에이전트 3개가 각각 MCP를 호출해 호출 수가 늘었다(로그 조회는 모니터링 대상마다 1회 추가). 병렬이라 벽시계 시간은 늘지 않았다(fake 기준 0.36s 유지).
 - **HITL**: 위험 조치 감지는 정규식이라 "재시작은 하지 마세요" 같은 부정문도 승인을 요구한다(오탐). interrupt 상태는 MemorySaver에만 있어 서버 재시작 시 승인 대기 중인 run은 사라진다. 승인 대기 중 같은 thread로 새 질문을 보내면 이전 승인 요청은 폐기된다.
 - **요약 메모리**: 요약은 손실 압축이다 — fake 백엔드는 추출 요약(이름·질문 앞부분)만 남기고, 실모델 요약은 비결정적이라 "이름을 정확히 보존하라"는 지시에 의존한다. 요약 LLM 호출 비용이 10메시지마다 1회 추가된다.
+
+## Mini-project 남은 과제 처리 (3차)
+
+| # | 과제 | 무엇을 했나 | 파일 |
+|---|---|---|---|
+| 1 | 두 시스템 언급 시 첫 번째만 조사 | (원인 차단) plan 정규화에서 쿼리에 언급된 KNOWN_SYSTEMS 중 모델이 빠뜨린 것을 task로 보충. (안전망) replan_check가 "언급됐지만 조사도 계획도 안 된 시스템"을 gap task로 추가(최대 2라운드) | `agent/ollama_llm.py`, `agent/openai_llm.py`, `agent/nodes/replan.py` |
+| 2 | UI 진행 표시가 ⏳로 남음 | 단계 항목을 `{text, done}` 객체로 바꾸고, 다음 단계가 오거나 FinalAnswer/ApprovalRequired가 오면 이전 단계를 ✓로 표시 | `web_chat.html` |
+| 3 | 단위 테스트 | pytest 32개: 라우팅·시스템명 헬퍼, RAG 분류(해싱 임베딩, 결정론), 검증 규칙·위험 조치 감지, 그래프 통합(fake LLM + FakeMCP로 v2 파이프라인 끝까지, HITL interrupt/resume, 재계획 보충), 요약 메모리·리포트 저장 | `tests/`, `pytest.ini` |
+| 4 | LLM-as-judge 평가 | `eval/judge.py` — 측정 결과의 답변이 실측 수치(facts)를 정확히 인용했는지, 지어내지 않았는지, 조치가 구체적인지 3항목 0/1 채점. ollama/openai는 품질 모델이 JSON으로 채점, fake는 규칙(validate.run_checks)으로 결정론 채점. `/chat` 응답에 `facts`(모니터링 실측)를 포함시켜 채점 근거로 쓴다 | `eval/judge.py`, `server.py`, `eval/measure.py` |
+| 5 | 인시던트 리포트 저장 | 장애 진단이 끝나면 타임라인·수집 사실·최종 답변을 Markdown 리포트로 `incidents` 테이블에 저장. `GET /incidents`, `GET /incidents/{id}?format=md`. 채팅 UI에 "📄 리포트 #id 열기" 링크 | `agent/report.py`, `agent/session_store.py`, `server.py`, `web_demo_server.py`, `web_chat.html` |
+
+실행:
+
+```bash
+.venv/bin/python -m pytest -q                                   # 단위 테스트
+.venv/bin/python eval/judge.py --metrics after/metrics_ollama.json --backend ollama --out after
+curl -s localhost:8100/incidents | python3 -m json.tool --no-ensure-ascii
+curl -s "localhost:8100/incidents/1?format=md"
+```
+
+한계: 재계획 보충은 KNOWN_SYSTEMS(monitoring.json)에 있는 이름만 잡는다(목록 밖 이름은 여전히 폴백). LLM-as-judge는
+채점 모델 자체가 틀릴 수 있어 규칙 검사(validate)와 함께 봐야 하고, 실모델 채점은 쿼리당 10~20초가 더 든다.

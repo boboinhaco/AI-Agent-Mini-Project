@@ -51,3 +51,31 @@
 | `memory_{fake,ollama}.json` | 요약 메모리 9턴 테스트 |
 | `screens/` | fake 승인·거절, ollama 승인·두 시스템 화면 |
 | `server_log_ollama.txt` | 측정 중 서버 로그 (개발 중 재현한 오류 traceback 포함) |
+
+---
+
+## 3차 — 남은 과제 처리 후 재측정
+
+| 지표 | 2차 | 3차 |
+|---|---|---|
+| ollama 정확도 | 29 / 32 | **32 / 32** |
+| ollama 조사 시스템 (q4 / q5 / q6) | gateway / web-01 / payments 하나씩 | gateway+payments / auth+web-01 / cache+payments |
+| ollama 총 지연 · cost | 575s · 0.084 | 657s · 0.094 (조사 대상 증가분) |
+| LLM-as-judge (ollama, 8건 × 3점) | — | 21 / 24 (q5 채점 타임아웃, 나머지 7건 만점) |
+| LLM-as-judge (fake, 규칙) | — | 24 / 24 |
+| pytest | — | 32 passed |
+| 인시던트 리포트 | — | 장애 쿼리마다 1건 저장 (`/incidents`) |
+
+리포트 예시(`GET /incidents/1?format=md`):
+
+```
+# 인시던트 리포트 — payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요
+## 개요
+- 장애 유형(runbook): cpu-spike · 조사 시스템: payments-service, web-01
+- 검증 시도: 2회 · 재계획: 1회 · 운영자 승인: 승인 (인스턴스 증설(스케일 아웃))
+## 타임라인
+- 라우팅: incident → 계획 수립 → 조사 분배 {'metrics': 2, 'logs': 2} → 재조사: runbook=cpu-spike → …
+## 수집된 사실 / ## 진단 및 권장 조치
+```
+
+추가 파일: `judge_{fake,ollama}.{md,json}`, `screens/fake_uc6_done_marks_report.png`

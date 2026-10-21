@@ -98,7 +98,7 @@
       </div>
 
       <div v-else-if="item.kind === 'steps'" class="steps">
-        <div v-for="(step, i) in item.steps" :key="i" class="step">{{ step }}</div>
+        <div v-for="(step, i) in item.steps" :key="i" class="step" :class="{ done: step.done }">{{ step.text }}</div>
       </div>
 
       <div v-else-if="item.kind === 'agent'" class="row agent">
@@ -116,6 +116,10 @@
       </div>
 
       <div v-else-if="item.kind === 'memo'" class="memo">{{ item.text }}</div>
+
+      <div v-else-if="item.kind === 'report'" class="memo">
+        📄 인시던트 리포트 #{{ item.incidentId }} 저장됨 — <a :href="'/incidents/' + item.incidentId + '?format=md'" target="_blank" style="color:#8b8bd8">열기</a>
+      </div>
 
       <details v-else-if="item.kind === 'prompt'" class="prompt-box">
         <summary>LLM에 전달된 최종 프롬프트 보기</summary>
@@ -213,6 +217,7 @@ createApp({
         try { e = JSON.parse(event.data); } catch { return; }
 
         if (e.type === 'ApprovalRequired') {
+          stepsItem.steps.forEach(s => s.done = true);
           log.value.push({ id: nextId++, kind: 'approval', actions: e.actions, decision: null });
           streamItem = null; streamAttempt = null;
           scrollToBottom();
@@ -237,6 +242,8 @@ createApp({
         }
 
         if (e.type === 'FinalAnswer') {
+          stepsItem.steps.forEach(s => s.done = true);   // 모든 단계 완료 표시
+          if (e.incident_id) log.value.push({ id: nextId++, kind: 'report', incidentId: e.incident_id });
           if (!streamItem) {
             streamItem = reactive({ id: nextId++, kind: 'agent', text: '' });
             log.value.push(streamItem);
@@ -253,7 +260,8 @@ createApp({
         if (!fn) return;
         const label = fn(e);
         if (!label) return;
-        stepsItem.steps.push(label);
+        stepsItem.steps.forEach(s => s.done = true);   // 새 단계가 오면 이전 단계는 끝난 것
+        stepsItem.steps.push(reactive({ text: label, done: false }));
         scrollToBottom();
       };
 

@@ -209,6 +209,15 @@ class OllamaFastLLM(OllamaLLM):
                 analysis_added = True
                 tasks.append({"id": "task-analysis", "agent": "analysis",
                               "kind": "pattern-analysis", "status": "pending"})
+        # 쿼리에 언급된 시스템 중 모델이 빠뜨린 것을 코드가 보충한다 — Before 실측: 두 시스템을
+        # 언급하면 소형 모델이 첫 번째만 계획해 두 번째는 조사 누락(q4·q5·q6)
+        for target in mentioned_systems(query):
+            if target not in seen:
+                seen.add(target)
+                tasks.insert(len([t for t in tasks if t["agent"] == "research"]),
+                             {"id": f"task-{idx}", "agent": "research", "kind": "monitoring",
+                              "target": target, "status": "pending"})
+                idx += 1
         if not seen:   # research가 하나도 없으면 실행 불능 — 쿼리에 등장하는
             # KNOWN_SYSTEMS 전부를 복구(하나만 복구하면 나머지가 조사 누락된 채
             # write 단계에서 수치가 조작될 수 있음)

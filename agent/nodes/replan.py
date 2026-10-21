@@ -7,24 +7,39 @@ from langsmith import traceable
 
 from ..deps import SupervisorDeps
 from ..rag import build_query_text
-from ..state import AgentState
+from ..state import AgentState, mentioned_systems
+
+MAX_ROUNDS = 2   # runbook 보완 1회 + 누락 시스템 보완 1회까지
 
 
 @traceable(name="replan_check_node")
 async def replan_check_node(state: AgentState, deps: SupervisorDeps) -> dict:
     collected = state.get("collected", [])
-    has_runbook = any(c["source"] == "runbook" for c in collected)
     rounds = state.get("replan_rounds", 0)
-    if has_runbook or rounds >= 1:
+    investigated = {c["data"].get("system_name") for c in collected if c["source"] == "monitoring"}
+    planned = {t["target"] for t in state["tasks"] if t["kind"] == "monitoring"}
+    # (안전망) 질문에 언급됐는데 조사도 계획도 안 된 시스템 — 계획 단계가 빠뜨린 경우
+    missing = [s for s in mentioned_systems(state["query"]) if s not in investigated | planned]
+    has_runbook = any(c["source"] == "runbook" for c in collected)
+    gap_tasks = []
+    if rounds < MAX_ROUNDS:
+        for i, target in enumerate(missing):
+            gap_tasks.append({"id": f"task-gap-sys-{i}", "agent": "research", "kind": "monitoring",
+                              "target": target, "status": "pending"})
+        if not has_runbook:
+            hit = await deps.rag.classify(build_query_text(state["query"], collected))
+            gap_tasks.append({"id": "task-gap-runbook", "agent": "research", "kind": "runbook",
+                              "target": hit["incident_type"], "status": "pending",
+                              "rag": {"title": hit.get("title"), "score": hit.get("score")}})
+    if not gap_tasks:
         verdict = {"type": "ReplanCheck", "round": rounds, "is_sufficient": True}
         return {"events": state["events"] + [verdict]}
-
-    hit = await deps.rag.classify(build_query_text(state["query"], collected))
-    incident_type = hit["incident_type"]
-    gap_task = {"id": "task-gap-runbook", "agent": "research", "kind": "runbook",
-                "target": incident_type, "status": "pending"}
+    runbook = next((t for t in gap_tasks if t["kind"] == "runbook"), None)
     verdict = {"type": "ReplanCheck", "round": rounds, "is_sufficient": False,
-               "gap_task": gap_task["id"], "target": incident_type,
-               "rag_title": hit.get("title"), "rag_score": hit.get("score")}
-    return {"tasks": state["tasks"] + [gap_task], "replan_rounds": rounds + 1,
+               "gap_task": ",".join(t["id"] for t in gap_tasks),
+               "missing_systems": missing,
+               "target": runbook["target"] if runbook else None,
+               "rag_title": runbook["rag"]["title"] if runbook else None,
+               "rag_score": runbook["rag"]["score"] if runbook else None}
+    return {"tasks": state["tasks"] + gap_tasks, "replan_rounds": rounds + 1,
             "events": state["events"] + [verdict]}

@@ -67,6 +67,23 @@ async def proxy_approve_stream(thread_id: str = "web-demo", approved: bool = Tru
                   {"thread_id": thread_id, "approved": str(approved).lower(), "comment": comment})
 
 
+@app.get("/incidents")
+async def proxy_incidents(limit: int = 50):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        r = await client.get(f"{BACKEND}/incidents", params={"limit": limit})
+    return JSONResponse(r.json(), status_code=r.status_code)
+
+
+@app.get("/incidents/{incident_id}")
+async def proxy_incident(incident_id: int, format: str = "json"):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        r = await client.get(f"{BACKEND}/incidents/{incident_id}", params={"format": format})
+    if format == "md":
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(r.text, status_code=r.status_code, media_type="text/markdown; charset=utf-8")
+    return JSONResponse(r.json(), status_code=r.status_code)
+
+
 @app.get("/session/{thread_id}")
 async def proxy_session(thread_id: str):
     async with httpx.AsyncClient(timeout=10.0) as client:

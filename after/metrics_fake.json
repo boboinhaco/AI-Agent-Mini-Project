@@ -1,7 +1,7 @@
 {
   "health": {
     "status": "ok",
-    "instance_id": 4471230608,
+    "instance_id": 4535208016,
     "creation_count": 1,
     "supervisor_version": "v2",
     "llm_backend": "fake",
@@ -30,7 +30,7 @@
       "checks_total": 4,
       "investigated": "payments-service,web-01",
       "runbooks": "cpu-spike",
-      "langsmith_run_id": "01a157fa-6286-7309-a950-8c46842f1936",
+      "langsmith_run_id": "01a15bcd-4c7f-737a-bc88-36d611cc9d42",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -44,7 +44,7 @@
           "cpu-spike"
         ]
       },
-      "reply": "'payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요' 진단 결과: 1) 모니터링: payments-service 상태=degraded, CPU 89.5% (알림 2건) · web-01 상태=healthy, CPU 34.1% (알림 0건) 2) 표준 절차: 'Runbook: CPU 급증 대응 절차'에 따라 반복 호출, 배치 작업 중복 실행 같은 특정 요청 패턴이 원인인지 최근 로그에서 확인한다. CPU가 90%를 넘고 지속되면 해당 인스턴스를 오토스케일링 그룹에서 한 대 더 띄워 부하를 분산한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
+      "reply": "'payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요' 진단 결과: 1) 모니터링: payments-service 상태=degraded, CPU 91.3% (알림 2건) · web-01 상태=healthy, CPU 36.7% (알림 0건) 2) 표준 절차: 'Runbook: CPU 급증 대응 절차'에 따라 반복 호출, 배치 작업 중복 실행 같은 특정 요청 패턴이 원인인지 최근 로그에서 확인한다. CPU가 90%를 넘고 지속되면 해당 인스턴스를 오토스케일링 그룹에서 한 대 더 띄워 부하를 분산한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
       "error": null,
       "events": [
         {
@@ -115,6 +115,7 @@
           "round": 0,
           "is_sufficient": false,
           "gap_task": "task-gap-runbook",
+          "missing_systems": [],
           "target": "cpu-spike",
           "rag_title": "Runbook: CPU 급증 대응 절차",
           "rag_score": 0.4512
@@ -215,20 +216,42 @@
         "cost_usd": 0.000715,
         "llm_backend": "fake",
         "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-6286-7309-a950-8c46842f1936"
-      }
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-4c7f-737a-bc88-36d611cc9d42"
+      },
+      "facts": [
+        {
+          "system_name": "payments-service",
+          "status": "degraded",
+          "cpu_percent": 91.3,
+          "memory_percent": 55.2,
+          "last_checked": "2026-10-21T09:12:23.150605",
+          "alerts": [
+            "CPU 91% (threshold 80%)",
+            "payments-service-3 instance responding slow"
+          ]
+        },
+        {
+          "system_name": "web-01",
+          "status": "healthy",
+          "cpu_percent": 36.7,
+          "memory_percent": 49.3,
+          "last_checked": "2026-10-21T09:12:23.152897",
+          "alerts": []
+        }
+      ],
+      "incident_id": 9
     },
     {
       "id": 2,
       "query": "cache-service 메모리 사용률이 계속 올라가고 있어요",
-      "latency_s": 0.78,
+      "latency_s": 0.77,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 1,
       "replan_rounds": 1,
       "retry_count": 0,
-      "parallel_elapsed": 0.37,
+      "parallel_elapsed": 0.36,
       "validation_attempts": 2,
       "cost_usd": 0.000662,
       "approvals": 2,
@@ -237,7 +260,7 @@
       "checks_total": 4,
       "investigated": "cache-service,web-01",
       "runbooks": "memory-leak",
-      "langsmith_run_id": "01a157fa-6590-772e-b00a-f6e70b4daa88",
+      "langsmith_run_id": "01a15bcd-4f83-72f7-900b-e3e06908104b",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -251,7 +274,7 @@
           "memory-leak"
         ]
       },
-      "reply": "'cache-service 메모리 사용률이 계속 올라가고 있어요' 진단 결과: 1) 모니터링: cache-service 상태=degraded, CPU 41.0% (알림 2건) · web-01 상태=healthy, CPU 39.4% (알림 0건) 2) 표준 절차: 'Runbook: 메모리 누수(Memory Leak) 대응 절차'에 따라 OOM 직전(90% 이상)이면 해당 프로세스를 즉시 재시작해 서비스 중단을 막는다 — 재시작은 임시 조치일 뿐임을 기록해둔다. 힙 덤프 또는 프로파일링 도구로 어떤 객체가 계속 쌓이는지 확인한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
+      "reply": "'cache-service 메모리 사용률이 계속 올라가고 있어요' 진단 결과: 1) 모니터링: cache-service 상태=degraded, CPU 45.5% (알림 2건) · web-01 상태=healthy, CPU 31.5% (알림 0건) 2) 표준 절차: 'Runbook: 메모리 누수(Memory Leak) 대응 절차'에 따라 OOM 직전(90% 이상)이면 해당 프로세스를 즉시 재시작해 서비스 중단을 막는다 — 재시작은 임시 조치일 뿐임을 기록해둔다. 힙 덤프 또는 프로파일링 도구로 어떤 객체가 계속 쌓이는지 확인한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
       "error": null,
       "events": [
         {
@@ -310,7 +333,7 @@
         {
           "type": "ResearchMerged",
           "done": 2,
-          "elapsed": 0.37,
+          "elapsed": 0.36,
           "agents": [
             "logs",
             "metrics",
@@ -322,6 +345,7 @@
           "round": 0,
           "is_sufficient": false,
           "gap_task": "task-gap-runbook",
+          "missing_systems": [],
           "target": "memory-leak",
           "rag_title": "Runbook: 메모리 누수(Memory Leak) 대응 절차",
           "rag_score": 0.5131
@@ -345,7 +369,7 @@
         {
           "type": "ResearchMerged",
           "done": 1,
-          "elapsed": 0.37,
+          "elapsed": 0.36,
           "agents": [
             "logs:skip",
             "metrics:skip",
@@ -409,7 +433,7 @@
         "gate_removed": 1,
         "replan_rounds": 1,
         "retry_count": 0,
-        "parallel_elapsed": 0.37,
+        "parallel_elapsed": 0.36,
         "validation_attempts": 2,
         "approval": {
           "approved": true,
@@ -422,14 +446,36 @@
         "cost_usd": 0.000662,
         "llm_backend": "fake",
         "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-6590-772e-b00a-f6e70b4daa88"
-      }
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-4f83-72f7-900b-e3e06908104b"
+      },
+      "facts": [
+        {
+          "system_name": "cache-service",
+          "status": "degraded",
+          "cpu_percent": 45.5,
+          "memory_percent": 90.7,
+          "last_checked": "2026-10-21T09:12:23.929633",
+          "alerts": [
+            "memory usage climbing steadily over 6h",
+            "heap near limit"
+          ]
+        },
+        {
+          "system_name": "web-01",
+          "status": "healthy",
+          "cpu_percent": 31.5,
+          "memory_percent": 46.7,
+          "last_checked": "2026-10-21T09:12:23.931187",
+          "alerts": []
+        }
+      ],
+      "incident_id": 10
     },
     {
       "id": 3,
       "query": "log-service 디스크 공간이 부족하다는 알림이 왔어요",
-      "latency_s": 0.78,
+      "latency_s": 0.77,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 1,
@@ -444,7 +490,7 @@
       "checks_total": 4,
       "investigated": "log-service,web-01",
       "runbooks": "disk-full",
-      "langsmith_run_id": "01a157fa-6899-703d-a0d6-3de95da527a2",
+      "langsmith_run_id": "01a15bcd-5288-7572-ab8d-7f4834eb35bd",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -458,7 +504,7 @@
           "disk-full"
         ]
       },
-      "reply": "'log-service 디스크 공간이 부족하다는 알림이 왔어요' 진단 결과: 1) 모니터링: log-service 상태=degraded, CPU 19.5% (알림 2건) · web-01 상태=healthy, CPU 37.9% (알림 0건) 2) 표준 절차: 'Runbook: 디스크 용량 부족 대응 절차'에 따라 로그 파일, 임시 파일, 오래된 백업처럼 안전하게 지울 수 있는 항목부터 정리해 여유 공간을 즉시 확보한다. 특정 프로세스가 비정상적으로 로그를 쌓고 있다면 로그 레벨을 낮추거나 로테이션 주기를 단축한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
+      "reply": "'log-service 디스크 공간이 부족하다는 알림이 왔어요' 진단 결과: 1) 모니터링: log-service 상태=degraded, CPU 26.2% (알림 2건) · web-01 상태=healthy, CPU 36.0% (알림 0건) 2) 표준 절차: 'Runbook: 디스크 용량 부족 대응 절차'에 따라 로그 파일, 임시 파일, 오래된 백업처럼 안전하게 지울 수 있는 항목부터 정리해 여유 공간을 즉시 확보한다. 특정 프로세스가 비정상적으로 로그를 쌓고 있다면 로그 레벨을 낮추거나 로테이션 주기를 단축한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
       "error": null,
       "events": [
         {
@@ -529,6 +575,7 @@
           "round": 0,
           "is_sufficient": false,
           "gap_task": "task-gap-runbook",
+          "missing_systems": [],
           "target": "disk-full",
           "rag_title": "Runbook: 디스크 용량 부족 대응 절차",
           "rag_score": 0.5989
@@ -629,14 +676,36 @@
         "cost_usd": 0.000647,
         "llm_backend": "fake",
         "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-6899-703d-a0d6-3de95da527a2"
-      }
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-5288-7572-ab8d-7f4834eb35bd"
+      },
+      "facts": [
+        {
+          "system_name": "log-service",
+          "status": "degraded",
+          "cpu_percent": 26.2,
+          "memory_percent": 38.1,
+          "last_checked": "2026-10-21T09:12:24.701374",
+          "alerts": [
+            "disk usage 95% on /var/log",
+            "disk space low"
+          ]
+        },
+        {
+          "system_name": "web-01",
+          "status": "healthy",
+          "cpu_percent": 36.0,
+          "memory_percent": 49.0,
+          "last_checked": "2026-10-21T09:12:24.703120",
+          "alerts": []
+        }
+      ],
+      "incident_id": 11
     },
     {
       "id": 4,
       "query": "gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요",
-      "latency_s": 0.78,
+      "latency_s": 0.77,
       "route": "incident",
       "task_count": 4,
       "gate_removed": 1,
@@ -651,7 +720,7 @@
       "checks_total": 3,
       "investigated": "gateway-service,payments-service,web-01",
       "runbooks": "network-timeout",
-      "langsmith_run_id": "01a157fa-6b9d-76c0-b833-a687a448c4c7",
+      "langsmith_run_id": "01a15bcd-5584-76d1-8474-79b20f4cc721",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -665,7 +734,7 @@
           "network-timeout"
         ]
       },
-      "reply": "'gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요' 진단 결과: 1) 모니터링: gateway-service 상태=degraded, CPU 31.2% (알림 2건) · payments-service 상태=degraded, CPU 92.9% (알림 2건) · web-01 상태=healthy, CPU 37.4% (알림 0건) 2) 표준 절차: 'Runbook: 네트워크 타임아웃 대응 절차'에 따라 DNS 해석 실패, 방화벽/보안그룹 변경, 로드밸런서 헬스체크 실패 중 최근 변경 사항이 있었는지 점검한다. 특정 리전/가용영역에서만 발생하면 해당 구간을 우회하는 라우팅으로 임시 전환한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
+      "reply": "'gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요' 진단 결과: 1) 모니터링: gateway-service 상태=degraded, CPU 30.1% (알림 2건) · payments-service 상태=degraded, CPU 97.7% (알림 2건) · web-01 상태=healthy, CPU 35.0% (알림 0건) 2) 표준 절차: 'Runbook: 네트워크 타임아웃 대응 절차'에 따라 DNS 해석 실패, 방화벽/보안그룹 변경, 로드밸런서 헬스체크 실패 중 최근 변경 사항이 있었는지 점검한다. 특정 리전/가용영역에서만 발생하면 해당 구간을 우회하는 라우팅으로 임시 전환한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
       "error": null,
       "events": [
         {
@@ -751,6 +820,7 @@
           "round": 0,
           "is_sufficient": false,
           "gap_task": "task-gap-runbook",
+          "missing_systems": [],
           "target": "network-timeout",
           "rag_title": "Runbook: 네트워크 타임아웃 대응 절차",
           "rag_score": 0.3839
@@ -843,14 +913,47 @@
         "cost_usd": 0.000819,
         "llm_backend": "fake",
         "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-6b9d-76c0-b833-a687a448c4c7"
-      }
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-5584-76d1-8474-79b20f4cc721"
+      },
+      "facts": [
+        {
+          "system_name": "gateway-service",
+          "status": "degraded",
+          "cpu_percent": 30.1,
+          "memory_percent": 45.1,
+          "last_checked": "2026-10-21T09:12:25.476662",
+          "alerts": [
+            "upstream timeout to payments-service (504)",
+            "network packet loss 3%"
+          ]
+        },
+        {
+          "system_name": "payments-service",
+          "status": "degraded",
+          "cpu_percent": 97.7,
+          "memory_percent": 58.3,
+          "last_checked": "2026-10-21T09:12:25.478075",
+          "alerts": [
+            "CPU 91% (threshold 80%)",
+            "payments-service-3 instance responding slow"
+          ]
+        },
+        {
+          "system_name": "web-01",
+          "status": "healthy",
+          "cpu_percent": 35.0,
+          "memory_percent": 48.5,
+          "last_checked": "2026-10-21T09:12:25.479446",
+          "alerts": []
+        }
+      ],
+      "incident_id": 12
     },
     {
       "id": 5,
       "query": "web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘",
-      "latency_s": 0.77,
+      "latency_s": 0.79,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 1,
@@ -865,7 +968,7 @@
       "checks_total": 3,
       "investigated": "auth-service,web-01",
       "runbooks": "high-latency",
-      "langsmith_run_id": "01a157fa-6ea3-79c7-95a9-b1e364b25b25",
+      "langsmith_run_id": "01a15bcd-589d-7167-b6c7-443c9cc31d82",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -878,7 +981,7 @@
           "high-latency"
         ]
       },
-      "reply": "'web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘' 진단 결과: 1) 모니터링: web-01 상태=healthy, CPU 34.4% (알림 0건) · auth-service 상태=degraded, CPU 79.3% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
+      "reply": "'web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘' 진단 결과: 1) 모니터링: web-01 상태=healthy, CPU 38.3% (알림 0건) · auth-service 상태=degraded, CPU 85.1% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
       "error": null,
       "events": [
         {
@@ -937,7 +1040,7 @@
         {
           "type": "ResearchMerged",
           "done": 2,
-          "elapsed": 0.36,
+          "elapsed": 0.37,
           "agents": [
             "logs",
             "metrics",
@@ -949,6 +1052,7 @@
           "round": 0,
           "is_sufficient": false,
           "gap_task": "task-gap-runbook",
+          "missing_systems": [],
           "target": "high-latency",
           "rag_title": "Runbook: 응답 지연(High Latency) 대응 절차",
           "rag_score": 0.5161
@@ -1049,14 +1153,36 @@
         "cost_usd": 0.000683,
         "llm_backend": "fake",
         "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-6ea3-79c7-95a9-b1e364b25b25"
-      }
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-589d-7167-b6c7-443c9cc31d82"
+      },
+      "facts": [
+        {
+          "system_name": "web-01",
+          "status": "healthy",
+          "cpu_percent": 38.3,
+          "memory_percent": 50.1,
+          "last_checked": "2026-10-21T09:12:26.253553",
+          "alerts": []
+        },
+        {
+          "system_name": "auth-service",
+          "status": "degraded",
+          "cpu_percent": 85.1,
+          "memory_percent": 64.5,
+          "last_checked": "2026-10-21T09:12:26.255899",
+          "alerts": [
+            "p95 latency 2.4s (threshold 1.0s)",
+            "connection pool 92% used"
+          ]
+        }
+      ],
+      "incident_id": 13
     },
     {
       "id": 6,
       "query": "payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘",
-      "latency_s": 0.77,
+      "latency_s": 0.78,
       "route": "incident",
       "task_count": 5,
       "gate_removed": 0,
@@ -1071,7 +1197,7 @@
       "checks_total": 4,
       "investigated": "cache-service,payments-service,web-01",
       "runbooks": "cpu-spike",
-      "langsmith_run_id": "01a157fa-71a4-7211-a1fe-3d06813417b9",
+      "langsmith_run_id": "01a15bcd-5ba9-740e-a488-9d14e0e076ce",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -1086,7 +1212,7 @@
           "cpu-spike"
         ]
       },
-      "reply": "'payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘' 진단 결과: 1) 모니터링: payments-service 상태=degraded, CPU 88.9% (알림 2건) · cache-service 상태=degraded, CPU 43.1% (알림 2건) · web-01 상태=healthy, CPU 37.1% (알림 0건) 2) 표준 절차: 'Runbook: CPU 급증 대응 절차'에 따라 반복 호출, 배치 작업 중복 실행 같은 특정 요청 패턴이 원인인지 최근 로그에서 확인한다. CPU가 90%를 넘고 지속되면 해당 인스턴스를 오토스케일링 그룹에서 한 대 더 띄워 부하를 분산한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
+      "reply": "'payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘' 진단 결과: 1) 모니터링: payments-service 상태=degraded, CPU 88.4% (알림 2건) · cache-service 상태=degraded, CPU 41.5% (알림 2건) · web-01 상태=healthy, CPU 31.3% (알림 0건) 2) 표준 절차: 'Runbook: CPU 급증 대응 절차'에 따라 반복 호출, 배치 작업 중복 실행 같은 특정 요청 패턴이 원인인지 최근 로그에서 확인한다. CPU가 90%를 넘고 지속되면 해당 인스턴스를 오토스케일링 그룹에서 한 대 더 띄워 부하를 분산한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
       "error": null,
       "events": [
         {
@@ -1172,6 +1298,7 @@
           "round": 0,
           "is_sufficient": false,
           "gap_task": "task-gap-runbook",
+          "missing_systems": [],
           "target": "cpu-spike",
           "rag_title": "Runbook: CPU 급증 대응 절차",
           "rag_score": 0.407
@@ -1272,20 +1399,53 @@
         "cost_usd": 0.000894,
         "llm_backend": "fake",
         "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-71a4-7211-a1fe-3d06813417b9"
-      }
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-5ba9-740e-a488-9d14e0e076ce"
+      },
+      "facts": [
+        {
+          "system_name": "payments-service",
+          "status": "degraded",
+          "cpu_percent": 88.4,
+          "memory_percent": 53.7,
+          "last_checked": "2026-10-21T09:12:27.035842",
+          "alerts": [
+            "CPU 91% (threshold 80%)",
+            "payments-service-3 instance responding slow"
+          ]
+        },
+        {
+          "system_name": "cache-service",
+          "status": "degraded",
+          "cpu_percent": 41.5,
+          "memory_percent": 88.8,
+          "last_checked": "2026-10-21T09:12:27.039928",
+          "alerts": [
+            "memory usage climbing steadily over 6h",
+            "heap near limit"
+          ]
+        },
+        {
+          "system_name": "web-01",
+          "status": "healthy",
+          "cpu_percent": 31.3,
+          "memory_percent": 46.7,
+          "last_checked": "2026-10-21T09:12:27.038282",
+          "alerts": []
+        }
+      ],
+      "incident_id": 14
     },
     {
       "id": 7,
       "query": "로그인 응답이 느려요, 원인 확인해주세요",
-      "latency_s": 0.77,
+      "latency_s": 0.78,
       "route": "incident",
       "task_count": 3,
       "gate_removed": 1,
       "replan_rounds": 1,
       "retry_count": 0,
-      "parallel_elapsed": 0.36,
+      "parallel_elapsed": 0.37,
       "validation_attempts": 2,
       "cost_usd": 0.000606,
       "approvals": 2,
@@ -1294,7 +1454,7 @@
       "checks_total": 3,
       "investigated": "auth-service,web-01",
       "runbooks": "high-latency",
-      "langsmith_run_id": "01a157fa-74a3-74ec-ba49-73cfcf18870e",
+      "langsmith_run_id": "01a15bcd-5eb9-7ddf-bca0-3ac4b696972c",
       "checks": {
         "route_ok": true,
         "systems_ok": true,
@@ -1307,214 +1467,7 @@
           "high-latency"
         ]
       },
-      "reply": "'로그인 응답이 느려요, 원인 확인해주세요' 진단 결과: 1) 모니터링: auth-service 상태=degraded, CPU 75.4% (알림 2건) · web-01 상태=healthy, CPU 34.4% (알림 0건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
-      "error": null,
-      "events": [
-        {
-          "type": "RouteDecided",
-          "route": "incident",
-          "corrected": false
-        },
-        {
-          "type": "PlanCreated",
-          "task_count": 3,
-          "targets": [
-            "auth-service",
-            "web-01"
-          ]
-        },
-        {
-          "type": "GateApplied",
-          "removed_analysis_tasks": 1
-        },
-        {
-          "type": "ResearchDispatched",
-          "sub_agents": {
-            "metrics": 2,
-            "logs": 2,
-            "runbook": 0
-          }
-        },
-        {
-          "type": "LogsCollected",
-          "target": "auth-service",
-          "lines": 4,
-          "agent": "log_agent"
-        },
-        {
-          "type": "LogsCollected",
-          "target": "web-01",
-          "lines": 2,
-          "agent": "log_agent"
-        },
-        {
-          "type": "TaskCompleted",
-          "id": "task-0",
-          "source": "monitoring",
-          "target": "auth-service",
-          "retries": 0,
-          "agent": "metrics_agent"
-        },
-        {
-          "type": "TaskCompleted",
-          "id": "task-1",
-          "source": "monitoring",
-          "target": "web-01",
-          "retries": 0,
-          "agent": "metrics_agent"
-        },
-        {
-          "type": "ResearchMerged",
-          "done": 2,
-          "elapsed": 0.36,
-          "agents": [
-            "logs",
-            "metrics",
-            "runbook:skip"
-          ]
-        },
-        {
-          "type": "ReplanCheck",
-          "round": 0,
-          "is_sufficient": false,
-          "gap_task": "task-gap-runbook",
-          "target": "high-latency",
-          "rag_title": "Runbook: 응답 지연(High Latency) 대응 절차",
-          "rag_score": 0.6103
-        },
-        {
-          "type": "ResearchDispatched",
-          "sub_agents": {
-            "metrics": 0,
-            "logs": 0,
-            "runbook": 1
-          }
-        },
-        {
-          "type": "TaskCompleted",
-          "id": "task-gap-runbook",
-          "source": "runbook",
-          "target": "high-latency",
-          "retries": 0,
-          "agent": "runbook_agent"
-        },
-        {
-          "type": "ResearchMerged",
-          "done": 1,
-          "elapsed": 0.36,
-          "agents": [
-            "logs:skip",
-            "metrics:skip",
-            "runbook"
-          ]
-        },
-        {
-          "type": "ReplanCheck",
-          "round": 1,
-          "is_sufficient": true
-        },
-        {
-          "type": "AnalysisSkipped",
-          "reason": "analysis task 0개"
-        },
-        {
-          "type": "DraftWritten",
-          "attempt": 1,
-          "length": 10
-        },
-        {
-          "type": "ApprovalGranted",
-          "actions": [
-            "서비스/프로세스 재시작"
-          ]
-        },
-        {
-          "type": "Validation",
-          "attempt": 1,
-          "verdict": "불합격",
-          "reasons": [
-            "응답이 너무 짧거나(10자) 번호 절차 '1) 2) 3)'가 없습니다.",
-            "조사한 시스템 auth-service, web-01의 결과를 답변에서 언급하지 않았습니다."
-          ]
-        },
-        {
-          "type": "DraftWritten",
-          "attempt": 2,
-          "length": 314
-        },
-        {
-          "type": "ApprovalGranted",
-          "actions": [
-            "로드밸런서에서 인스턴스 제외"
-          ]
-        },
-        {
-          "type": "Validation",
-          "attempt": 2,
-          "verdict": "합격",
-          "reasons": []
-        },
-        {
-          "type": "Finalize",
-          "pipeline": "incident-v2"
-        }
-      ],
-      "metadata": {
-        "route": "incident",
-        "task_count": 3,
-        "gate_removed": 1,
-        "replan_rounds": 1,
-        "retry_count": 0,
-        "parallel_elapsed": 0.36,
-        "validation_attempts": 2,
-        "approval": {
-          "approved": true,
-          "actions": [
-            "로드밸런서에서 인스턴스 제외"
-          ],
-          "comment": "auto"
-        },
-        "approval_rejections": 0,
-        "cost_usd": 0.000606,
-        "llm_backend": "fake",
-        "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-74a3-74ec-ba49-73cfcf18870e"
-      }
-    },
-    {
-      "id": 8,
-      "query": "billing-service 응답이 느려요",
-      "latency_s": 0.79,
-      "route": "incident",
-      "task_count": 3,
-      "gate_removed": 1,
-      "replan_rounds": 1,
-      "retry_count": 0,
-      "parallel_elapsed": 0.36,
-      "validation_attempts": 2,
-      "cost_usd": 0.000612,
-      "approvals": 2,
-      "reply_len": 315,
-      "checks_passed": 4,
-      "checks_total": 4,
-      "investigated": "auth-service,web-01",
-      "runbooks": "high-latency",
-      "langsmith_run_id": "01a157fa-77b6-7ab7-8eff-5cad46b395b8",
-      "checks": {
-        "route_ok": true,
-        "systems_ok": true,
-        "no_fake_system": true,
-        "format_ok": true,
-        "investigated": [
-          "auth-service",
-          "web-01"
-        ],
-        "runbooks": [
-          "high-latency"
-        ]
-      },
-      "reply": "'billing-service 응답이 느려요' 진단 결과: 1) 모니터링: auth-service 상태=degraded, CPU 85.8% (알림 2건) · web-01 상태=healthy, CPU 40.9% (알림 0건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
+      "reply": "'로그인 응답이 느려요, 원인 확인해주세요' 진단 결과: 1) 모니터링: auth-service 상태=degraded, CPU 85.7% (알림 2건) · web-01 상태=healthy, CPU 37.1% (알림 0건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
       "error": null,
       "events": [
         {
@@ -1585,6 +1538,237 @@
           "round": 0,
           "is_sufficient": false,
           "gap_task": "task-gap-runbook",
+          "missing_systems": [],
+          "target": "high-latency",
+          "rag_title": "Runbook: 응답 지연(High Latency) 대응 절차",
+          "rag_score": 0.6103
+        },
+        {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 0,
+            "logs": 0,
+            "runbook": 1
+          }
+        },
+        {
+          "type": "TaskCompleted",
+          "id": "task-gap-runbook",
+          "source": "runbook",
+          "target": "high-latency",
+          "retries": 0,
+          "agent": "runbook_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 1,
+          "elapsed": 0.37,
+          "agents": [
+            "logs:skip",
+            "metrics:skip",
+            "runbook"
+          ]
+        },
+        {
+          "type": "ReplanCheck",
+          "round": 1,
+          "is_sufficient": true
+        },
+        {
+          "type": "AnalysisSkipped",
+          "reason": "analysis task 0개"
+        },
+        {
+          "type": "DraftWritten",
+          "attempt": 1,
+          "length": 10
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "서비스/프로세스 재시작"
+          ]
+        },
+        {
+          "type": "Validation",
+          "attempt": 1,
+          "verdict": "불합격",
+          "reasons": [
+            "응답이 너무 짧거나(10자) 번호 절차 '1) 2) 3)'가 없습니다.",
+            "조사한 시스템 auth-service, web-01의 결과를 답변에서 언급하지 않았습니다."
+          ]
+        },
+        {
+          "type": "DraftWritten",
+          "attempt": 2,
+          "length": 314
+        },
+        {
+          "type": "ApprovalGranted",
+          "actions": [
+            "로드밸런서에서 인스턴스 제외"
+          ]
+        },
+        {
+          "type": "Validation",
+          "attempt": 2,
+          "verdict": "합격",
+          "reasons": []
+        },
+        {
+          "type": "Finalize",
+          "pipeline": "incident-v2"
+        }
+      ],
+      "metadata": {
+        "route": "incident",
+        "task_count": 3,
+        "gate_removed": 1,
+        "replan_rounds": 1,
+        "retry_count": 0,
+        "parallel_elapsed": 0.37,
+        "validation_attempts": 2,
+        "approval": {
+          "approved": true,
+          "actions": [
+            "로드밸런서에서 인스턴스 제외"
+          ],
+          "comment": "auto"
+        },
+        "approval_rejections": 0,
+        "cost_usd": 0.000606,
+        "llm_backend": "fake",
+        "supervisor_version": "v2",
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-5eb9-7ddf-bca0-3ac4b696972c"
+      },
+      "facts": [
+        {
+          "system_name": "auth-service",
+          "status": "degraded",
+          "cpu_percent": 85.7,
+          "memory_percent": 64.9,
+          "last_checked": "2026-10-21T09:12:27.816049",
+          "alerts": [
+            "p95 latency 2.4s (threshold 1.0s)",
+            "connection pool 92% used"
+          ]
+        },
+        {
+          "system_name": "web-01",
+          "status": "healthy",
+          "cpu_percent": 37.1,
+          "memory_percent": 49.6,
+          "last_checked": "2026-10-21T09:12:27.818489",
+          "alerts": []
+        }
+      ],
+      "incident_id": 15
+    },
+    {
+      "id": 8,
+      "query": "billing-service 응답이 느려요",
+      "latency_s": 0.77,
+      "route": "incident",
+      "task_count": 3,
+      "gate_removed": 1,
+      "replan_rounds": 1,
+      "retry_count": 0,
+      "parallel_elapsed": 0.36,
+      "validation_attempts": 2,
+      "cost_usd": 0.000612,
+      "approvals": 2,
+      "reply_len": 315,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "investigated": "auth-service,web-01",
+      "runbooks": "high-latency",
+      "langsmith_run_id": "01a15bcd-61be-7b15-908d-09762b6ca418",
+      "checks": {
+        "route_ok": true,
+        "systems_ok": true,
+        "no_fake_system": true,
+        "format_ok": true,
+        "investigated": [
+          "auth-service",
+          "web-01"
+        ],
+        "runbooks": [
+          "high-latency"
+        ]
+      },
+      "reply": "'billing-service 응답이 느려요' 진단 결과: 1) 모니터링: auth-service 상태=degraded, CPU 80.1% (알림 2건) · web-01 상태=healthy, CPU 32.9% (알림 0건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.",
+      "error": null,
+      "events": [
+        {
+          "type": "RouteDecided",
+          "route": "incident",
+          "corrected": false
+        },
+        {
+          "type": "PlanCreated",
+          "task_count": 3,
+          "targets": [
+            "auth-service",
+            "web-01"
+          ]
+        },
+        {
+          "type": "GateApplied",
+          "removed_analysis_tasks": 1
+        },
+        {
+          "type": "ResearchDispatched",
+          "sub_agents": {
+            "metrics": 2,
+            "logs": 2,
+            "runbook": 0
+          }
+        },
+        {
+          "type": "LogsCollected",
+          "target": "auth-service",
+          "lines": 4,
+          "agent": "log_agent"
+        },
+        {
+          "type": "LogsCollected",
+          "target": "web-01",
+          "lines": 2,
+          "agent": "log_agent"
+        },
+        {
+          "type": "TaskCompleted",
+          "id": "task-0",
+          "source": "monitoring",
+          "target": "auth-service",
+          "retries": 0,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "TaskCompleted",
+          "id": "task-1",
+          "source": "monitoring",
+          "target": "web-01",
+          "retries": 0,
+          "agent": "metrics_agent"
+        },
+        {
+          "type": "ResearchMerged",
+          "done": 2,
+          "elapsed": 0.36,
+          "agents": [
+            "logs",
+            "metrics",
+            "runbook:skip"
+          ]
+        },
+        {
+          "type": "ReplanCheck",
+          "round": 0,
+          "is_sufficient": false,
+          "gap_task": "task-gap-runbook",
+          "missing_systems": [],
           "target": "high-latency",
           "rag_title": "Runbook: 응답 지연(High Latency) 대응 절차",
           "rag_score": 0.5584
@@ -1685,9 +1869,31 @@
         "cost_usd": 0.000612,
         "llm_backend": "fake",
         "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-77b6-7ab7-8eff-5cad46b395b8"
-      }
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-61be-7b15-908d-09762b6ca418"
+      },
+      "facts": [
+        {
+          "system_name": "auth-service",
+          "status": "degraded",
+          "cpu_percent": 80.1,
+          "memory_percent": 62.0,
+          "last_checked": "2026-10-21T09:12:28.597161",
+          "alerts": [
+            "p95 latency 2.4s (threshold 1.0s)",
+            "connection pool 92% used"
+          ]
+        },
+        {
+          "system_name": "web-01",
+          "status": "healthy",
+          "cpu_percent": 32.9,
+          "memory_percent": 47.5,
+          "last_checked": "2026-10-21T09:12:28.598686",
+          "alerts": []
+        }
+      ],
+      "incident_id": 16
     },
     {
       "id": 9,
@@ -1707,7 +1913,7 @@
       "checks_total": 1,
       "investigated": "",
       "runbooks": "",
-      "langsmith_run_id": "01a157fa-77bc-7990-8a40-45c3a0a842af",
+      "langsmith_run_id": "01a15bcd-61c7-7c65-afc4-6aa7d9af6deb",
       "checks": {
         "route_ok": true
       },
@@ -1737,14 +1943,16 @@
         "cost_usd": 3e-06,
         "llm_backend": "fake",
         "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-77bc-7990-8a40-45c3a0a842af"
-      }
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-61c7-7c65-afc4-6aa7d9af6deb"
+      },
+      "facts": [],
+      "incident_id": null
     },
     {
       "id": 10,
       "query": "제 이름은 민수입니다 → 제 이름이 뭐였죠?",
-      "latency_s": 0.02,
+      "latency_s": 0.01,
       "route": "chat",
       "task_count": 0,
       "gate_removed": 0,
@@ -1759,7 +1967,7 @@
       "checks_total": 2,
       "investigated": "",
       "runbooks": "",
-      "langsmith_run_id": "01a157fa-77c8-7d4d-a0d5-25ef536845bd",
+      "langsmith_run_id": "01a15bcd-61d3-7799-ad32-4fcb538fa554",
       "checks": {
         "route_ok": true,
         "memory_ok": true
@@ -1790,9 +1998,11 @@
         "cost_usd": 3e-06,
         "llm_backend": "fake",
         "supervisor_version": "v2",
-        "instance_id": 4471230608,
-        "langsmith_run_id": "01a157fa-77c8-7d4d-a0d5-25ef536845bd"
-      }
+        "instance_id": 4535208016,
+        "langsmith_run_id": "01a15bcd-61d3-7799-ad32-4fcb538fa554"
+      },
+      "facts": [],
+      "incident_id": null
     }
   ]
 }

@@ -130,7 +130,9 @@ def main():
                 "langsmith_run_id": meta.get("langsmith_run_id"),
             }
             rows.append({**row, "checks": checks, "reply": data["reply"], "error": error,
-                         "events": data.get("events", []), "metadata": meta})
+                         "events": data.get("events", []), "metadata": meta,
+                         "facts": data.get("facts", []), "logs": data.get("logs", []),
+                         "incident_id": data.get("incident_id")})
             if error:
                 continue
             print(f"q{spec['id']:>2} {elapsed:>6.1f}s route={row['route']:<8} tasks={row['task_count']} "

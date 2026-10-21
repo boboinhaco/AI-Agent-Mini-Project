@@ -20,6 +20,10 @@ class SqliteSessionStore:
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS summaries ("
             " thread_id TEXT PRIMARY KEY, summary TEXT, covered INTEGER, updated TEXT)")
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS incidents ("
+            " id INTEGER PRIMARY KEY AUTOINCREMENT, thread_id TEXT, query TEXT,"
+            " incident_type TEXT, systems TEXT, report TEXT, created TEXT)")
         self.conn.commit()
 
     # ── 원문 ─────────────────────────────────────────────────────────────
@@ -66,6 +70,33 @@ class SqliteSessionStore:
                 "history_messages": len(history),
                 "history_chars": sum(len(m["content"]) for m in history),
                 "summary": summary}
+
+    # ── 인시던트 리포트 ──────────────────────────────────────────────────
+    def save_incident(self, thread_id: str, query: str, incident_type: str | None,
+                      systems: list[str], report: str) -> int:
+        cur = self.conn.execute(
+            "INSERT INTO incidents (thread_id, query, incident_type, systems, report, created)"
+            " VALUES (?,?,?,?,?,?)",
+            (thread_id, query, incident_type, ",".join(systems), report,
+             datetime.now().isoformat(timespec="seconds")))
+        self.conn.commit()
+        return cur.lastrowid
+
+    def list_incidents(self, limit: int = 50) -> list[dict]:
+        rows = self.conn.execute(
+            "SELECT id, thread_id, query, incident_type, systems, created FROM incidents"
+            " ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        return [{"id": r[0], "thread_id": r[1], "query": r[2], "incident_type": r[3],
+                 "systems": r[4].split(",") if r[4] else [], "created": r[5]} for r in rows]
+
+    def get_incident(self, incident_id: int) -> dict | None:
+        r = self.conn.execute(
+            "SELECT id, thread_id, query, incident_type, systems, report, created FROM incidents"
+            " WHERE id=?", (incident_id,)).fetchone()
+        if not r:
+            return None
+        return {"id": r[0], "thread_id": r[1], "query": r[2], "incident_type": r[3],
+                "systems": r[4].split(",") if r[4] else [], "report": r[5], "created": r[6]}
 
     def close(self) -> None:
         self.conn.close()

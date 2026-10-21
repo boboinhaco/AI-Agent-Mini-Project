@@ -30,6 +30,7 @@ from agent.graph import build_graph
 from agent.mcp_client import MCPClient
 from agent.memory import compact_history
 from agent.rag import RunbookIndex, make_embeddings
+from agent.report import build_report
 from agent.session_store import SqliteSessionStore
 from agent.supervisor_v1 import run_v1
 
@@ -122,6 +123,24 @@ async def version():
     return {"supervisor_version": app.state.deps.version}
 
 
+@app.get("/incidents")
+async def list_incidents(limit: int = 50):
+    """저장된 인시던트 리포트 목록 (최신순)."""
+    return {"incidents": app.state.deps.session_store.list_incidents(limit)}
+
+
+@app.get("/incidents/{incident_id}")
+async def get_incident(incident_id: int, format: str = "json"):
+    """인시던트 리포트 1건 — format=md 이면 Markdown 본문만."""
+    rep = app.state.deps.session_store.get_incident(incident_id)
+    if not rep:
+        raise HTTPException(404, f"incident {incident_id} 없음")
+    if format == "md":
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(rep["report"], media_type="text/markdown; charset=utf-8")
+    return rep
+
+
 @app.get("/session/{thread_id}")
 async def session_stats(thread_id: str):
     """요약 메모리 상태 — 원문 메시지 수, 요약된 수, LLM에 실제로 넘어가는 이력 크기."""
@@ -161,10 +180,15 @@ def _interrupt_payload(result: dict) -> dict | None:
     return first.value if hasattr(first, "value") else first
 
 
-async def _finish_turn(deps, thread_id: str, message: str, final: str) -> dict | None:
-    """세션에 턴을 기록하고, 길어졌으면 과거 턴을 요약 압축한다."""
+async def _finish_turn(deps, thread_id: str, message: str, final: str,
+                       result: dict | None = None) -> dict | None:
+    """세션에 턴을 기록하고, 장애 진단이었으면 리포트를 저장하고, 길어졌으면 과거 턴을 요약 압축한다."""
     deps.session_store.append(thread_id, "user", message)
     deps.session_store.append(thread_id, "assistant", final)
+    if result is not None and result.get("route") == "incident":
+        rep = build_report(message, result, thread_id)
+        result["incident_id"] = deps.session_store.save_incident(
+            thread_id, message, rep["incident_type"], rep["systems"], rep["report"])
     return await compact_history(deps, thread_id)
 
 
@@ -184,7 +208,7 @@ async def _handle_chat(message: str, thread_id: str) -> tuple[dict, str | None]:
             app.state.pending[thread_id] = {"run_id": run_id, "message": message}
             result["run_id"] = run_id
         else:
-            result["memory"] = await _finish_turn(deps, thread_id, message, result["final"])
+            result["memory"] = await _finish_turn(deps, thread_id, message, result["final"], result)
     rt = get_current_run_tree()
     return result, (str(rt.id) if rt else None)
 
@@ -196,7 +220,10 @@ def _chat_response(result: dict, run_id: str | None) -> dict:
                 "run_id": result.get("run_id"), "events": result.get("events", []),
                 "metadata": _metadata(result, run_id)}
     return {"reply": result["final"], "status": "done", "events": result.get("events", []),
-            "memory": result.get("memory"), "metadata": _metadata(result, run_id)}
+            "memory": result.get("memory"), "incident_id": result.get("incident_id"),
+            "facts": [c["data"] for c in result.get("collected", []) if c["source"] == "monitoring"],
+            "logs": [c["data"] for c in result.get("collected", []) if c["source"] == "logs"],
+            "metadata": _metadata(result, run_id)}
 
 
 @app.post("/chat")
@@ -219,7 +246,7 @@ async def _handle_approve(req: ApproveRequest) -> tuple[dict, str | None]:
         result["run_id"] = pending["run_id"]
     else:
         app.state.pending.pop(req.thread_id, None)
-        result["memory"] = await _finish_turn(deps, req.thread_id, pending["message"], result["final"])
+        result["memory"] = await _finish_turn(deps, req.thread_id, pending["message"], result["final"], result)
     rt = get_current_run_tree()
     return result, (str(rt.id) if rt else None)
 
@@ -242,6 +269,7 @@ async def _stream_graph(graph_input, run_id: str, thread_id: str, message: str):
     """
     deps = app.state.deps
     seen, final, last_prompt, interrupted = 0, "", None, None
+    last_state: dict = {}
     async for mode, payload in app.state.graph.astream(
             graph_input, config=_run_config(run_id), stream_mode=["updates", "custom"]):
         if mode == "custom":
@@ -253,6 +281,7 @@ async def _stream_graph(graph_input, run_id: str, thread_id: str, message: str):
         for node_name, delta in payload.items():
             if not isinstance(delta, dict):
                 continue
+            last_state.update(delta)
             for ev in (delta.get("events") or [])[seen:]:
                 yield _sse({**ev, "node": node_name})
             if delta.get("events"):
@@ -266,8 +295,10 @@ async def _stream_graph(graph_input, run_id: str, thread_id: str, message: str):
         yield _sse({**interrupted, "run_id": run_id})
     else:
         app.state.pending.pop(thread_id, None)
-        yield _sse({"type": "FinalAnswer", "reply": final, "prompt": last_prompt})
-        memory = await _finish_turn(deps, thread_id, message, final)
+        result = {**last_state, "final": final}
+        memory = await _finish_turn(deps, thread_id, message, final, result)
+        yield _sse({"type": "FinalAnswer", "reply": final, "prompt": last_prompt,
+                    "incident_id": result.get("incident_id")})
         if memory:
             yield _sse({"type": "MemoryCompacted", **memory})
     yield "data: [DONE]\n\n"
