@@ -38,55 +38,9 @@ LangSmith 프로젝트를 백엔드별로 분리해 기록한다(`capstone-all-t
 
 ## 아키텍처 구성도
 
-```mermaid
-flowchart TB
-    User["사용자 / curl"] -->|"POST /chat, GET /chat/stream"| API
-    Browser["브라우저 (web_chat.html)"] -->|"same-origin"| Proxy["web_demo_server.py<br/>(프록시, :8600)"]
-    Proxy -->|"POST /chat, GET /chat/stream"| API
+![아키텍처](images/architecture.svg)
 
-    subgraph Server["server.py — FastAPI (:8100)"]
-        API["/health · /version<br/>/chat · /chat/stream"]
-        Lifespan["lifespan: 서버 수명 동안<br/>Agent 번들 1회 생성"]
-    end
-
-    API --> Graph
-
-    subgraph Graph["agent/graph.py — LangGraph StateGraph (v2)"]
-        Route["route"] -->|chat| ChatAnswer["chat_answer"]
-        Route -->|incident| Plan["plan"]
-        Plan --> Gate["gate"]
-        Gate --> Research["research"]
-        Research --> ReplanCheck["replan_check"]
-        ReplanCheck -->|부족| Research
-        ReplanCheck -->|충분| Analysis["analysis<br/>(task 없으면 내부 스킵)"]
-        Analysis --> Write["write"]
-        Write --> Validate["validate"]
-        Validate -->|불합격| Write
-        Validate -->|합격| Finalize["finalize"]
-    end
-
-    API -. "SUPERVISOR_VERSION=v1" .-> V1["agent/supervisor_v1.py<br/>(legacy 선형 파이프라인)"]
-
-    Plan -. "find_prompt로 서버 탐색 후<br/>MCP Prompt 요청" .-> MCPClient
-    Research -->|"find_resource_template로 서버 탐색 후<br/>stdio subprocess 요청"| MCPClient
-
-    subgraph MCPClient["agent/mcp_client.py — 다중 MCP 세션"]
-        subgraph OpsServer["mcp_server.py (server=&quot;ops&quot;, 실사용)"]
-            Tool["Tool: get_monitoring_status"]
-            Resource["Resource: runbook://incident-response/{type}"]
-            Prompt["Prompt: incident_analysis_prompt"]
-        end
-        subgraph DocsServer["mcp_server_docs.py (server=&quot;docs&quot;, decoy)"]
-            DocsResource["Resource: docs://api-reference/{section}<br/>(agent는 사용 안 함)"]
-        end
-    end
-
-    Lifespan --> Deps["SupervisorDeps"]
-    Deps --> LLM["fast_llm / quality_llm<br/>(fake · ollama · openai 중 택1)"]
-    Deps --> Session["SqliteSessionStore<br/>(session.db)"]
-
-    Graph --> Trace["LangSmith<br/>(계층 트리 trace · Dataset 평가 · Feedback)"]
-```
+(선은 90°로만 꺾이고 도형·선이 겹치지 않도록 좌표를 계산해 그린 SVG — 생성 스크립트 기준)
 
 - **싱글턴**: `server.py`의 `lifespan`에서 `SupervisorDeps`(LLM·세션·MCP 연결)를 정확히
   1회 생성해 `app.state`로 공유한다 — 요청마다 재생성하지 않는다.
@@ -272,21 +226,9 @@ Before 기준선은 [`before/README.md`](../before/README.md), After 측정은 `
 
 ### 그래프 (2차 이후)
 
-```mermaid
-flowchart TB
-    route -.->|chat| chat_answer --> END
-    route -.->|incident| plan --> gate --> research
-    subgraph research["research (compiled subgraph)"]
-        dispatch --> metrics_agent & log_agent & runbook_agent --> merge
-    end
-    research --> replan_check
-    replan_check -.->|부족: RAG로 runbook 선택| research
-    replan_check -.->|충분| analysis --> write --> approval
-    approval -.->|"승인 / 위험 조치 없음"| validate
-    approval -.->|"거절 (interrupt → resume)"| write
-    validate -.->|불합격| write
-    validate -.->|합격| finalize --> END
-```
+![개선 후 그래프](images/graph_after.svg)
+
+개선 전 그래프: ![개선 전 그래프](images/graph_before.svg)
 
 ### 한계·트레이드오프
 
