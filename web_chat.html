@@ -55,6 +55,15 @@
   }
   .bubble .status.validating { background: #2b3a52; color: #9ecbff; }
   .bubble .status.rejected { background: #4a3a1a; color: #f0c674; }
+  .bubble .status.waiting { background: #3d3a1a; color: #f5e18c; }
+  .bubble .status.partial { background: #4a3a1a; color: #f0c674; }
+  .row.agent .bubble.error { background: #4a2a2a; border: 1px solid #a05050; }
+  .steps .step.stopped::before { content: "✖ "; color: #ff8a8a; }
+  .steps .elapsed { color: #6f6f90; font-size: 11px; margin-top: 2px; }
+  .approval .note { font-size: 12px; color: #c9b27a; margin: 4px 0 8px; }
+  .approval input { width: 100%; margin: 6px 0 8px; padding: 7px 10px; font-size: 13px; }
+  header a { color: #8b8bd8; font-size: 13px; margin-left: 14px; text-decoration: none; }
+  .hint { font-size: 12px; color: #7a7aa0; padding: 6px 20px 0; }
   .prompt-box {
     flex-shrink: 0;   /* #log가 스크롤 영역이 되면서(min-height:0) <details>가 flex
                          자식으로서 내용 없이 찌그러지는 걸 방지 */
@@ -99,7 +108,7 @@
 </head>
 <body>
 <div id="app">
-  <header>운영 인시던트 대응 에이전트 <span>{{ backendLabel }}</span></header>
+  <header>운영 인시던트 대응 에이전트 <span>{{ backendLabel }}</span><a href="/incidents?format=html" target="_blank">📄 지난 리포트</a></header>
   <div id="log" ref="logEl">
     <template v-for="item in log" :key="item.id">
       <div v-if="item.kind === 'user'" class="row user">
@@ -107,21 +116,26 @@
       </div>
 
       <div v-else-if="item.kind === 'steps'" class="steps">
-        <div v-for="(step, i) in item.steps" :key="i" class="step" :class="{ done: step.done, warn: step.warn }">{{ step.text }}</div>
+        <div v-for="(step, i) in item.steps" :key="i" class="step" :class="{ done: step.done, warn: step.warn, stopped: step.stopped }">{{ step.text }}</div>
+        <div v-if="item.elapsed" class="elapsed">⏱ {{ item.elapsed }}</div>
       </div>
 
       <div v-else-if="item.kind === 'agent'" class="row agent">
-        <div class="bubble"><div v-if="item.status" class="status" :class="item.statusKind">{{ item.status }}</div>{{ item.text }}</div>
+        <div class="bubble" :class="{ error: item.error }"><div v-if="item.status" class="status" :class="item.statusKind">{{ item.status }}</div>{{ item.text }}</div>
       </div>
 
       <div v-else-if="item.kind === 'approval'" class="approval" :class="{ decided: item.decision }">
-        <h4>⚠️ 운영자 승인 필요 — 초안에 위험 조치가 포함돼 있습니다</h4>
+        <h4>⚠️ 답변 초안에 다음 조치가 들어 있습니다 — 답변에 포함할까요?</h4>
         <ul><li v-for="a in item.actions" :key="a">{{ a }}</li></ul>
-        <div v-if="!item.decision" class="btns">
-          <button @click="decide(item, true)">승인하고 계속</button>
-          <button class="reject" @click="decide(item, false)">거절 (조치 제외하고 재작성)</button>
+        <div class="note">승인해도 에이전트가 서버를 직접 조작하지는 않습니다. 답변에 이 조치를 넣을지만 정합니다. 거절하면 조치를 빼고 조사·확인 중심으로 다시 씁니다.</div>
+        <div v-if="!item.decision">
+          <input v-model="item.comment" placeholder="거절 사유 (선택) — 예: 재시작은 야간에만 가능" />
+          <div class="btns">
+            <button @click="decide(item, true)">답변에 포함 (승인)</button>
+            <button class="reject" @click="decide(item, false)">빼고 다시 쓰기 (거절)</button>
+          </div>
         </div>
-        <div v-else>→ {{ item.decision === 'approved' ? '승인됨' : '거절됨 — 재작성 중' }}</div>
+        <div v-else>→ {{ item.decision === 'approved' ? '승인됨 — 답변 확정 중' : '거절됨 — 조치를 빼고 다시 쓰는 중' }}</div>
       </div>
 
       <div v-else-if="item.kind === 'memo'" class="memo">{{ item.text }}</div>
@@ -131,16 +145,17 @@
       </div>
 
       <details v-else-if="item.kind === 'prompt'" class="prompt-box">
-        <summary>LLM에 전달된 최종 프롬프트 보기</summary>
+        <summary>🔧 개발자용: 모델에 전달된 프롬프트 보기</summary>
         <pre>{{ item.text }}</pre>
       </details>
     </template>
   </div>
+  <div class="hint">장애 질문은 보통 1~2분 걸립니다 (모니터링·로그·매뉴얼을 직접 조회). 조회 가능한 시스템: 결제(payments-service) · 로그인(auth-service) · 캐시(cache-service) · API 게이트웨이(gateway-service) · 로그 수집(log-service) · 웹 서버(web-01)</div>
   <form @submit.prevent="onSubmit">
     <input
       v-model="input"
       autocomplete="off"
-      placeholder="예: auth-service 로그인 응답이 느려졌어요. 원인 확인해주세요"
+      placeholder="예: payments-service 결제가 느려요 / 디스크 부족 알람이 왔어요 / 로그인이 안 돼요"
     />
     <button type="submit" :disabled="sending">보내기</button>
   </form>
@@ -151,26 +166,30 @@
 const { createApp, ref, reactive, nextTick } = Vue;
 
 const STEP_LABELS = {
-  ResearchDispatched: e => `조사 서브에이전트 분배: 메트릭 ${e.sub_agents.metrics} · 로그 ${e.sub_agents.logs} · 런북 ${e.sub_agents.runbook}`,
-  SubAgent: e => e.status === 'started' ? `${e.agent} 시작 (${(e.targets || []).join(', ')})` : null,
-  LogsCollected: e => `최근 로그 수집 (시스템: ${e.target}, ${e.lines}줄)`,
-  ResearchMerged: e => `조사 결과 병합 (${e.elapsed}s, 병렬)`,
-  ApprovalGranted: () => '운영자 승인 → 검수 진행',
-  ApprovalRejected: () => '운영자 거절 → 조치 제외하고 재작성',
-  ApprovalEscalated: () => '거절 상한 도달 → 조치 실행 금지 경고를 달아 검수로 진행',
-  ApprovalSkipped: e => e.reason === '위험 조치 없음' ? '위험 조치 없음 — 승인 생략' : null,
-  PlanCreated: e => `계획 수립: 할 일 ${e.task_count}가지${e.targets?.length ? ` (시스템: ${e.targets.join(', ')})` : ''}`,
-  GateApplied: e => e.removed_analysis_tasks ? `불필요한 작업 ${e.removed_analysis_tasks}건 제거` : null,
+  PendingDiscarded: () => '이전 승인 대기 요청은 취소하고 새 질문을 처리합니다',
+  SystemDiscovery: e => `어느 시스템인지 명시되지 않아 ${e.targets.length}개 시스템을 모두 확인합니다`,
+  SystemsScreened: e => `증상(${e.incident_type})과 맞는 시스템: ${e.kept.join(', ')}${e.dropped.length ? ` (나머지 ${e.dropped.length}개는 관련 없음)` : ''}`,
+  ResearchDispatched: e => `조회 시작 — 모니터링 ${e.sub_agents.metrics}건 · 로그 ${e.sub_agents.logs}건 · 매뉴얼 ${e.sub_agents.runbook}건 (동시에 진행)`,
+  SubAgent: e => e.status === 'started' ? ({ metrics_agent: '모니터링 수치 조회 중', log_agent: '최근 로그 조회 중', runbook_agent: '대응 매뉴얼 조회 중' }[e.agent] || e.agent) + ` (${(e.targets || []).join(', ')})` : null,
+  LogsCollected: e => `최근 로그 확인 완료 (${e.target}, ${e.lines}줄)`,
+  ResearchMerged: e => `조회 완료 (${e.elapsed}초)`,
+  ApprovalGranted: e => `운영자 승인: ${e.actions.join(', ')} → 답변 확정`,
+  ApprovalRejected: e => `운영자 거절: ${e.actions.join(', ')} → 조치를 빼고 다시 작성`,
+  ApprovalEscalated: e => ({ text: `거절한 조치(${e.actions.join(', ')})가 다시 나와 '실행 금지' 경고를 붙여 마무리합니다`, warn: true }),
+  ApprovalSkipped: e => e.reason === '위험 조치 없음' ? '위험한 조치 없음 — 승인 없이 진행' : (e.reason.startsWith('이미') ? '이미 승인한 조치 — 다시 묻지 않음' : null),
+  PlanCreated: e => `확인할 시스템 정함${e.targets?.length ? `: ${e.targets.join(', ')}` : ''}`,
+  GateApplied: e => e.removed_analysis_tasks ? `불필요한 작업 ${e.removed_analysis_tasks}건 제외` : null,
   TaskCompleted: e => (e.source === 'monitoring'
-      ? `모니터링 지표 확인 (시스템: ${e.target})`
-      : `대응 매뉴얼(runbook) 조회 (장애유형: ${e.target})`) + (e.retries ? ' (재시도 성공)' : ''),
-  ReplanCheck: e => e.is_sufficient ? null : `정보 부족 → 장애유형 "${e.target}"로 추가 조사`,
-  SystemDiscovery: e => `시스템명이 없어 전체 ${e.targets.length}개 시스템을 탐색`,
-  SystemsScreened: e => `증상(${e.incident_type})과 맞는 시스템 선별: ${e.kept.join(', ')}${e.dropped.length ? ` (${e.dropped.length}개 제외)` : ''}`,
-  DraftWritten: e => `답변 초안 작성 완료 (시도 ${e.attempt}) → 검수 중`,
-  Validation: e => e.verdict.startsWith('합격') ? '검수 통과'
-      : { text: `검수 반려 (시도 ${e.attempt}) → 다시 작성 중: ${(e.reasons || []).join(' ')}`, warn: true },
+      ? `모니터링 수치 확인 완료 (${e.target})`
+      : `대응 매뉴얼 찾음: ${e.target}`) + (e.retries ? ' (재시도 후 성공)' : ''),
+  ReplanCheck: e => e.is_sufficient ? null : (e.missing_systems && e.missing_systems.length
+      ? `빠진 시스템 추가 확인: ${e.missing_systems.join(', ')}` : `대응 매뉴얼 찾는 중: ${e.target}`),
+  DraftWritten: e => `답변 작성 완료 (${e.attempt}번째) → 점검 중`,
+  Validation: e => e.verdict === '합격' ? '답변 점검 통과'
+      : (e.partial ? { text: '점검 기준을 일부 못 채웠지만 참고용으로 전달합니다', warn: true }
+                   : { text: `점검에서 보완 요청 (${e.attempt}번째) → 다시 작성: ${(e.reasons || []).join(' ')}`, warn: true }),
   Finalize: () => '최종 답변 완성',
+  Error: e => ({ text: `중단됨: ${e.message}`, warn: true }),
 };
 
 createApp({
@@ -184,7 +203,7 @@ createApp({
     let nextId = 0;
 
     fetch('/health').then(r => r.json()).then(h => {
-      backendLabel.value = `${h.llm_backend} 실모델(${h.fast_llm}/${h.quality_llm}) · all_total_vue`;
+      backendLabel.value = h.llm_backend === 'fake' ? '테스트 모드(가짜 모델)' : (h.llm_backend === 'ollama' ? '로컬 모델' : 'OpenAI 모델');
     }).catch(() => {});
 
     async function scrollToBottom() {
@@ -217,7 +236,7 @@ createApp({
       sending.value = true;
       const stepsItem = reactive({ id: nextId++, kind: 'steps', steps: [] });
       log.value.push(stepsItem);
-      consume(`/chat/approve/stream?thread_id=${encodeURIComponent(thread)}&approved=${approved}`, stepsItem, pendingBubble);
+      consume(`/chat/approve/stream?thread_id=${encodeURIComponent(thread)}&approved=${approved}&comment=${encodeURIComponent(item.comment || '')}`, stepsItem, pendingBubble);
       pendingBubble = null;
     }
 
@@ -225,19 +244,34 @@ createApp({
 
     function consume(url, stepsItem, reuseBubble = null) {
       const es = new EventSource(url);
+      const started = Date.now();
+      const timer = setInterval(() => { stepsItem.elapsed = `${Math.round((Date.now() - started) / 1000)}초 경과`; }, 1000);
+      const stop = (ok) => {
+        clearInterval(timer); es.close(); sending.value = false;
+        stepsItem.elapsed = ok ? null : stepsItem.elapsed;
+        if (!ok) stepsItem.steps.forEach(s => { if (!s.done) s.stopped = true; });
+      };
       let streamItem = reuseBubble;
       if (streamItem) { streamItem.status = approvedLabel(url); streamItem.statusKind = 'validating'; }
       let streamAttempt = null;   // write_node 재작성(attempt 증가) 시 새 말풍선으로 끊는다
 
       es.onmessage = (event) => {
-        if (event.data === '[DONE]') { es.close(); sending.value = false; return; }
+        if (event.data === '[DONE]') { stop(true); return; }
         let e;
         try { e = JSON.parse(event.data); } catch { return; }
 
+        if (e.type === 'Error') {
+          log.value.push({ id: nextId++, kind: 'agent', text: `⚠️ ${e.message}`, status: null, statusKind: '', error: true });
+          if (streamItem) streamItem.status = null;
+          stepsItem.steps.push(reactive({ text: `중단됨: ${e.message}`, warn: true, done: false, stopped: true }));
+          scrollToBottom();
+          return;
+        }
+
         if (e.type === 'ApprovalRequired') {
           stepsItem.steps.forEach(s => s.done = true);
-          log.value.push({ id: nextId++, kind: 'approval', actions: e.actions, decision: null });
-          if (streamItem) { streamItem.status = '⏸ 운영자 승인 대기'; streamItem.statusKind = 'rejected'; }
+          log.value.push({ id: nextId++, kind: 'approval', actions: e.actions, decision: null, comment: '' });
+          if (streamItem) { streamItem.status = '⏸ 운영자 승인 기다리는 중'; streamItem.statusKind = 'waiting'; }
           pendingBubble = streamItem;
           streamItem = null; streamAttempt = null;
           scrollToBottom();
@@ -245,7 +279,7 @@ createApp({
         }
         if (e.type === 'MemoryCompacted') {
           log.value.push({ id: nextId++, kind: 'memo',
-            text: `🧠 대화가 길어져 과거 ${e.summarized}개 메시지를 요약(${e.summary_chars}자)으로 압축했습니다` });
+            text: `🧠 오래된 대화 ${e.summarized}개를 요약해 기억합니다 (최근 대화는 그대로 유지됩니다)` });
           scrollToBottom();
           return;
         }
@@ -269,8 +303,9 @@ createApp({
           streamItem.status = '🔍 검수 중…'; streamItem.statusKind = 'validating';
         }
         if (e.type === 'Validation' && streamItem) {
-          if (e.verdict.startsWith('합격')) { streamItem.status = null; }
-          else { streamItem.status = `⚠️ 검수 반려 — 다시 작성합니다 (${(e.reasons || [])[0] || ''})`; streamItem.statusKind = 'rejected'; }
+          if (e.partial) { streamItem.status = '⚠️ 점검 기준 일부 미달 — 참고용 답변'; streamItem.statusKind = 'partial'; }
+          else if (e.verdict === '합격') { streamItem.status = null; }
+          else { streamItem.status = `🔁 점검에서 보완 요청 — 다시 작성합니다 (${(e.reasons || [])[0] || ''})`; streamItem.statusKind = 'rejected'; }
         }
 
         if (e.type === 'FinalAnswer') {
@@ -280,7 +315,7 @@ createApp({
             log.value.push(streamItem);
           }
           streamItem.text = e.reply;   // 토큰 합산 결과와 서버의 최종 텍스트를 일치시킨다
-          streamItem.status = null;
+          if (streamItem.statusKind !== 'partial') streamItem.status = null;
           // 승인 카드·재작성 단계가 말풍선 뒤에 쌓였으면 최종 답변을 맨 아래로 옮긴다 (답변은 항상 하나, 항상 마지막)
           const at = log.value.indexOf(streamItem);
           if (at >= 0 && at !== log.value.length - 1) { log.value.splice(at, 1); log.value.push(streamItem); }
@@ -302,7 +337,12 @@ createApp({
         scrollToBottom();
       };
 
-      es.onerror = () => { es.close(); sending.value = false; };
+      es.onerror = () => {
+        stop(false);
+        log.value.push({ id: nextId++, kind: 'agent', error: true, status: null, statusKind: '',
+          text: '⚠️ 서버와 연결이 끊겼습니다. 서버가 켜져 있는지 확인한 뒤 같은 질문을 다시 보내 주세요. (승인 대기 중이었다면 서버가 재시작됐을 수 있어요 — 질문을 다시 보내면 됩니다)' });
+        scrollToBottom();
+      };
     }
 
     return { backendLabel, log, input, sending, logEl, onSubmit, decide };

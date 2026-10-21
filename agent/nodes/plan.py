@@ -2,7 +2,7 @@
 from langsmith import traceable
 
 from ..deps import SupervisorDeps
-from ..state import KNOWN_SYSTEMS, AgentState, add_cost, extract_system_name, mentioned_systems
+from ..state import KNOWN_SYSTEMS, AgentState, add_cost, extract_system_name, target_systems
 
 
 @traceable(name="plan_node")
@@ -16,7 +16,7 @@ async def plan_node(state: AgentState, deps: SupervisorDeps) -> dict:
     )
     result, usage = await deps.fast_llm.plan(state["query"], procedure)
     tasks, events, discovery = result["tasks"], [], False
-    if not mentioned_systems(state["query"]):
+    if not target_systems(state["query"]):   # 시스템명도, '결제' 같은 업무 용어도 없을 때만 전체 탐색
         # 시스템명이 없는 문의("디스크 공간이 부족하다고 알람이 왔어") — 기본 시스템(auth-service)으로
         # 폴백하면 엉뚱한 진단이 나온다(실측). 전체 시스템을 병렬로 훑고 replan_check가 증상과 맞는
         # 시스템만 남긴다(SystemsScreened).

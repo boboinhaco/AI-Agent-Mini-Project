@@ -9,14 +9,15 @@ from ..state import AgentState, add_cost
 @traceable(name="write_node")
 async def write_node(state: AgentState, deps: SupervisorDeps) -> dict:
     """attempt 번호를 토큰에 실어 보내 재작성 시 프론트가 새 말풍선으로 끊을 수 있게 한다."""
-    attempt = state.get("validation_attempts", 0) + 1
+    attempt = state.get("validation_attempts", 0) + 1          # 검증 기준 시도 번호 (fake 1차 저품질 재현용)
+    revision = state.get("draft_revision", 0) + 1              # 검증 반려·승인 거절을 모두 세는 초안 번호
     writer = get_stream_writer()
     draft, usage = await deps.quality_llm.write(
         state["query"], state.get("collected", []),
         attempt, state.get("validation_feedback"),
         on_token=lambda piece: writer(
-            {"type": "AnswerToken", "attempt": attempt, "delta": piece}))
-    return {"draft": draft, "last_prompt": usage.get("prompt"),
+            {"type": "AnswerToken", "attempt": revision, "delta": piece}))
+    return {"draft": draft, "draft_revision": revision, "last_prompt": usage.get("prompt"),
             "cost_usd": add_cost(state, usage),
-            "events": state["events"] + [{"type": "DraftWritten", "attempt": attempt,
+            "events": state["events"] + [{"type": "DraftWritten", "attempt": revision,
                                           "length": len(draft)}]}

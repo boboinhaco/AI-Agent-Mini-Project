@@ -1,11 +1,11 @@
 id,query,latency_s,route,task_count,gate_removed,replan_rounds,retry_count,parallel_elapsed,validation_attempts,approvals,cost_usd,reply_len,checks_passed,checks_total,investigated,runbooks
-1,"payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요",42.09,incident,3,0,1,1,0.37,1,1,0.006069,401,4,4,payments-service,cpu-spike
-2,cache-service 메모리 사용률이 계속 올라가고 있어요,35.85,incident,3,0,1,0,0.37,1,1,0.00602,272,4,4,cache-service,memory-leak
-3,log-service 디스크 공간이 부족하다는 알림이 왔어요,90.09,incident,2,1,1,0,0.37,2,2,0.014827,364,4,4,log-service,disk-full
-4,gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요,39.01,incident,4,0,1,0,0.37,1,1,0.007197,476,3,3,"gateway-service,payments-service",network-timeout
-5,"web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘",97.23,incident,4,0,1,0,0.37,2,0,0.017256,563,3,3,"auth-service,web-01",high-latency
-6,payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘,99.03,incident,4,0,1,0,0.37,1,1,0.0133,771,4,4,"cache-service,payments-service",cpu-spike
-7,"로그인 응답이 느려요, 원인 확인해주세요",83.78,incident,3,0,1,0,0.37,2,0,0.014884,280,3,3,auth-service,high-latency
-8,billing-service 응답이 느려요,165.01,incident,2,0,1,0,0.37,2,0,0.013938,283,4,4,auth-service,high-latency
-9,"안녕, 너는 누구야?",1.96,chat,0,0,0,0,,0,0,7.4e-05,38,1,1,,
-10,제 이름은 민수입니다 → 제 이름이 뭐였죠?,2.46,chat,0,0,0,0,,0,0,6.1e-05,16,2,2,,
+1,"payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요",37.84,incident,3,0,1,0,0.01,1,1,0.007086,437,4,4,payments-service,cpu-spike
+2,cache-service 메모리 사용률이 계속 올라가고 있어요,38.19,incident,3,0,1,0,0.01,1,1,0.007272,566,4,4,cache-service,memory-leak
+3,log-service 디스크 공간이 부족하다는 알림이 왔어요,93.95,incident,2,1,1,0,0.01,3,1,0.021517,459,4,4,log-service,disk-full
+4,gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요,95.87,incident,4,0,1,0,0.01,3,0,0.023596,707,3,3,"gateway-service,payments-service",network-timeout
+5,"web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘",140.95,incident,4,0,1,0,0.01,2,0,0.023978,749,3,3,"auth-service,web-01",high-latency
+6,payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘,54.43,incident,4,0,1,0,0.01,1,1,0.010013,674,4,4,"cache-service,payments-service",memory-leak
+7,"로그인 응답이 느려요, 원인 확인해주세요",58.58,incident,3,0,1,0,0.01,2,0,0.014269,567,4,4,auth-service,high-latency
+8,billing-service 응답이 느려요,234.86,incident,7,0,1,0,0.02,2,0,0.022173,614,5,5,auth-service,high-latency
+9,"안녕, 너는 누구야?",14.37,chat,0,0,0,0,,0,0,0.003201,255,1,1,,
+10,제 이름은 민수입니다 → 제 이름이 뭐였죠?,22.15,chat,0,0,0,0,,0,0,0.003514,11,2,2,,

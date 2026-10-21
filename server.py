@@ -124,21 +124,45 @@ async def version():
     return {"supervisor_version": app.state.deps.version}
 
 
+_HTML_CSS = ("body{font-family:-apple-system,'Apple SD Gothic Neo',sans-serif;max-width:860px;margin:32px auto;"
+             "padding:0 16px;color:#1d2030;line-height:1.6}h1{font-size:20px}h2{font-size:16px;margin-top:24px}"
+             "table{border-collapse:collapse;width:100%}th,td{border:1px solid #c9cdd8;padding:6px 10px;text-align:left}"
+             "a{color:#5b5bd6}code{background:#f1f2f7;padding:1px 4px}")
+
+
+def _html_page(title: str, body: str) -> str:
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(f"<!doctype html><html><head><meta charset='utf-8'><title>{title}</title>"
+                        f"<style>{_HTML_CSS}</style></head><body>{body}</body></html>")
+
+
 @app.get("/incidents")
-async def list_incidents(limit: int = 50):
-    """저장된 인시던트 리포트 목록 (최신순)."""
-    return {"incidents": app.state.deps.session_store.list_incidents(limit)}
+async def list_incidents(limit: int = 50, format: str = "json"):
+    """저장된 인시던트 리포트 목록 (최신순). format=html 이면 사람이 보는 목록 페이지."""
+    items = app.state.deps.session_store.list_incidents(limit)
+    if format != "html":
+        return {"incidents": items}
+    rows = "".join(f"<tr><td><a href='/incidents/{i['id']}?format=html'>#{i['id']}</a></td><td>{i['created']}</td>"
+                   f"<td>{i['query']}</td><td>{i['incident_type'] or '-'}</td><td>{', '.join(i['systems'])}</td></tr>"
+                   for i in items)
+    return _html_page("지난 인시던트 리포트", f"<h1>지난 인시던트 리포트</h1><table><tr><th>번호</th><th>생성</th>"
+                      f"<th>질문</th><th>장애 유형</th><th>시스템</th></tr>{rows or '<tr><td colspan=5>없음</td></tr>'}</table>")
 
 
 @app.get("/incidents/{incident_id}")
 async def get_incident(incident_id: int, format: str = "json"):
-    """인시던트 리포트 1건 — format=md 이면 Markdown 본문만."""
+    """인시던트 리포트 1건 — format=md 는 Markdown 원문, format=html 은 읽기용 페이지."""
     rep = app.state.deps.session_store.get_incident(incident_id)
     if not rep:
         raise HTTPException(404, f"incident {incident_id} 없음")
     if format == "md":
         from fastapi.responses import PlainTextResponse
         return PlainTextResponse(rep["report"], media_type="text/markdown; charset=utf-8")
+    if format == "html":
+        import markdown
+        body = markdown.markdown(rep["report"], extensions=["tables"])
+        return _html_page(f"인시던트 리포트 #{incident_id}",
+                          f"<p><a href='/incidents?format=html'>← 지난 리포트 목록</a></p>{body}")
     return rep
 
 
@@ -173,6 +197,26 @@ def _run_config(run_id: str) -> dict:
     return {"configurable": {"thread_id": run_id}}
 
 
+async def _discard_pending(thread_id: str, reason: str) -> dict | None:
+    """승인 대기 중인 run이 있으면 폐기(리뷰 A1) — 체크포인트도 지워 메모리 누수 방지(리뷰 A4)."""
+    pending = app.state.pending.pop(thread_id, None)
+    if not pending:
+        return None
+    await _drop_run(pending["run_id"])
+    deps = app.state.deps
+    if pending.get("user_saved"):   # 질문은 이미 저장됨 — 어떤 결말이었는지 기록해 이력 공백을 막는다
+        deps.session_store.append(thread_id, "assistant",
+                                  f"[승인 대기 중이던 요청이 {reason}로 종료되었습니다]")
+    return {"type": "PendingDiscarded", "run_id": pending["run_id"], "reason": reason}
+
+
+async def _drop_run(run_id: str) -> None:
+    try:
+        await app.state.graph.checkpointer.adelete_thread(run_id)
+    except Exception:   # 체크포인터 구현에 따라 없을 수 있음 — 정리 실패는 치명적이지 않다
+        pass
+
+
 def _interrupt_payload(result: dict) -> dict | None:
     intr = result.get("__interrupt__")
     if not intr:
@@ -182,9 +226,10 @@ def _interrupt_payload(result: dict) -> dict | None:
 
 
 async def _finish_turn(deps, thread_id: str, message: str, final: str,
-                       result: dict | None = None) -> dict | None:
+                       result: dict | None = None, user_saved: bool = False) -> dict | None:
     """세션에 턴을 기록하고, 장애 진단이었으면 리포트를 저장하고, 길어졌으면 과거 턴을 요약 압축한다."""
-    deps.session_store.append(thread_id, "user", message)
+    if not user_saved:
+        deps.session_store.append(thread_id, "user", message)
     deps.session_store.append(thread_id, "assistant", final)
     if result is not None and result.get("route") == "incident":
         rep = build_report(message, result, thread_id)
@@ -201,15 +246,25 @@ async def _handle_chat(message: str, thread_id: str) -> tuple[dict, str | None]:
         result = await run_v1(deps, message, thread_id, history)   # Wave 14
         await _finish_turn(deps, thread_id, message, result["final"])
     else:
+        discarded = await _discard_pending(thread_id, "새 질문")
         run_id = f"{thread_id}:{uuid.uuid4().hex[:8]}"
-        result = await app.state.graph.ainvoke(
-            {"query": message, "thread_id": thread_id, "history": history,
-             "events": [], "cost_usd": 0.0}, config=_run_config(run_id))
+        try:
+            result = await app.state.graph.ainvoke(
+                {"query": message, "thread_id": thread_id, "history": history,
+                 "events": [], "cost_usd": 0.0}, config=_run_config(run_id))
+        except Exception:
+            await _drop_run(run_id)
+            raise
+        if discarded:
+            result["events"] = [discarded] + list(result.get("events", []))
         if _interrupt_payload(result):
-            app.state.pending[thread_id] = {"run_id": run_id, "message": message}
+            # 승인 대기 — 질문을 지금 저장해 서버 재시작 시 이력 공백을 막는다 (리뷰 A2)
+            deps.session_store.append(thread_id, "user", message)
+            app.state.pending[thread_id] = {"run_id": run_id, "message": message, "user_saved": True}
             result["run_id"] = run_id
         else:
             result["memory"] = await _finish_turn(deps, thread_id, message, result["final"], result)
+            await _drop_run(run_id)
     rt = get_current_run_tree()
     return result, (str(rt.id) if rt else None)
 
@@ -240,14 +295,22 @@ async def _handle_approve(req: ApproveRequest) -> tuple[dict, str | None]:
     pending = app.state.pending.get(req.thread_id)
     if not pending:
         raise HTTPException(404, f"승인 대기 중인 요청이 없습니다: thread_id={req.thread_id}")
-    result = await app.state.graph.ainvoke(
-        Command(resume={"approved": req.approved, "comment": req.comment}),
-        config=_run_config(pending["run_id"]))
-    if _interrupt_payload(result):   # 거절 → 재작성 → 또 위험 조치 → 다시 승인 요청
+    try:
+        result = await app.state.graph.ainvoke(
+            Command(resume={"approved": req.approved, "comment": req.comment}),
+            config=_run_config(pending["run_id"]))
+    except Exception:
+        app.state.pending.pop(req.thread_id, None)
+        await _drop_run(pending["run_id"])
+        raise
+    if _interrupt_payload(result):   # 거절 → 재작성 → 다른 위험 조치 → 다시 승인 요청
         result["run_id"] = pending["run_id"]
     else:
-        app.state.pending.pop(req.thread_id, None)
-        result["memory"] = await _finish_turn(deps, req.thread_id, pending["message"], result["final"], result)
+        if app.state.pending.get(req.thread_id, {}).get("run_id") == pending["run_id"]:
+            app.state.pending.pop(req.thread_id, None)
+        result["memory"] = await _finish_turn(deps, req.thread_id, pending["message"], result["final"],
+                                              result, user_saved=pending.get("user_saved", False))
+        await _drop_run(pending["run_id"])
     rt = get_current_run_tree()
     return result, (str(rt.id) if rt else None)
 
@@ -262,50 +325,77 @@ def _sse(obj) -> str:
     return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
 
 
-async def _stream_graph(graph_input, run_id: str, thread_id: str, message: str):
+async def _stream_graph(graph_input, run_id: str, thread_id: str, message: str,
+                        pending: dict | None = None):
     """그래프 실행을 SSE 이벤트로 중계. interrupt(승인 요청)가 나오면 ApprovalRequired를 보내고 멈춘다.
 
-    stream_mode를 리스트로 주면 (mode, payload) 튜플이 나온다 — "updates"는 노드가 끝날 때마다의
-    상태 델타, "custom"은 write/chat/서브에이전트가 get_stream_writer()로 즉시 흘려보내는 이벤트다.
+    - stream_mode ["updates","custom"] + subgraphs=True: 서브에이전트의 custom 이벤트(SubAgent)까지 받는다.
+      서브그래프 내부 노드의 updates는 네임스페이스가 붙어 오므로 최상위(네임스페이스 없음) 델타만 이벤트로 쓴다.
+    - 예외는 Error 이벤트로 전달하고 [DONE]은 항상 보낸다 (리뷰 A3).
     """
     deps = app.state.deps
     seen, final, last_prompt, interrupted = 0, "", None, None
     last_state: dict = {}
-    if isinstance(graph_input, Command):   # 승인 후 재개 — 이미 보낸 이벤트는 건너뛴다 (단계 중복 표시 방지)
+    if isinstance(graph_input, Command):   # 승인 후 재개 — 이미 보낸 이벤트는 건너뛴다
         snapshot = await app.state.graph.aget_state(_run_config(run_id))
         seen = len((snapshot.values or {}).get("events", []))
         last_state.update(snapshot.values or {})
-    async for mode, payload in app.state.graph.astream(
-            graph_input, config=_run_config(run_id), stream_mode=["updates", "custom"]):
-        if mode == "custom":
-            yield _sse(payload)
-            continue
-        if "__interrupt__" in payload:
-            interrupted = _interrupt_payload(payload)
-            continue
-        for node_name, delta in payload.items():
-            if not isinstance(delta, dict):
+    try:
+        async for item in app.state.graph.astream(
+                graph_input, config=_run_config(run_id), stream_mode=["updates", "custom"],
+                subgraphs=True):
+            namespace, mode, payload = item
+            if mode == "custom":
+                yield _sse(payload)
                 continue
-            last_state.update(delta)
-            for ev in (delta.get("events") or [])[seen:]:
-                yield _sse({**ev, "node": node_name})
-            if delta.get("events"):
-                seen = len(delta["events"])
-            if delta.get("final"):
-                final = delta["final"]
-            if delta.get("last_prompt"):
-                last_prompt = delta["last_prompt"]
+            if namespace:   # 서브그래프 내부 노드의 상태 델타 — 최상위 research 델타에 합쳐져 다시 온다
+                continue
+            if "__interrupt__" in payload:
+                interrupted = _interrupt_payload(payload)
+                continue
+            for node_name, delta in payload.items():
+                if not isinstance(delta, dict):
+                    continue
+                last_state.update(delta)
+                for ev in (delta.get("events") or [])[seen:]:
+                    yield _sse({**ev, "node": node_name})
+                if delta.get("events"):
+                    seen = len(delta["events"])
+                if delta.get("final"):
+                    final = delta["final"]
+                if delta.get("last_prompt"):
+                    last_prompt = delta["last_prompt"]
+    except Exception as e:   # 모델·MCP 오류 — 사용자에게 알리고 run을 정리한다
+        yield _sse({"type": "Error", "message": f"처리 중 오류가 발생했습니다 ({type(e).__name__}). "
+                                                 "잠시 후 같은 질문을 다시 보내 주세요.", "detail": str(e)[:200]})
+        app.state.pending.pop(thread_id, None)
+        await _drop_run(run_id)
+        yield "data: [DONE]\n\n"
+        return
     if interrupted:
-        app.state.pending[thread_id] = {"run_id": run_id, "message": message}
+        if not (pending and pending.get("user_saved")):
+            deps.session_store.append(thread_id, "user", message)   # 승인 대기 중 재시작 대비 (리뷰 A2)
+        app.state.pending[thread_id] = {"run_id": run_id, "message": message, "user_saved": True}
         yield _sse({**interrupted, "run_id": run_id})
     else:
-        app.state.pending.pop(thread_id, None)
+        if app.state.pending.get(thread_id, {}).get("run_id") == run_id:
+            app.state.pending.pop(thread_id, None)
         result = {**last_state, "final": final}
-        memory = await _finish_turn(deps, thread_id, message, final, result)
-        yield _sse({"type": "FinalAnswer", "reply": final, "prompt": last_prompt,
-                    "incident_id": result.get("incident_id")})
+        # 답은 먼저 보여주고(리뷰 A11), 리포트 저장·요약 압축은 그 뒤에
+        user_saved = bool(pending and pending.get("user_saved"))
+        if not user_saved:
+            deps.session_store.append(thread_id, "user", message)
+        deps.session_store.append(thread_id, "assistant", final)
+        incident_id = None
+        if result.get("route") == "incident":
+            rep = build_report(message, result, thread_id)
+            incident_id = deps.session_store.save_incident(
+                thread_id, message, rep["incident_type"], rep["systems"], rep["report"])
+        yield _sse({"type": "FinalAnswer", "reply": final, "prompt": last_prompt, "incident_id": incident_id})
+        memory = await compact_history(deps, thread_id)
         if memory:
             yield _sse({"type": "MemoryCompacted", **memory})
+        await _drop_run(run_id)
     yield "data: [DONE]\n\n"
 
 
@@ -328,6 +418,9 @@ async def chat_stream(message: str, thread_id: str = "default"):
             await _finish_turn(deps, thread_id, message, result["final"])
             yield "data: [DONE]\n\n"
             return
+        discarded = await _discard_pending(thread_id, "새 질문")
+        if discarded:
+            yield _sse(discarded)
         run_id = f"{thread_id}:{uuid.uuid4().hex[:8]}"
         async for chunk in _stream_graph(
                 {"query": message, "thread_id": thread_id, "history": history,
@@ -348,7 +441,7 @@ async def chat_approve_stream(thread_id: str = "default", approved: bool = True,
     async def gen():
         async for chunk in _stream_graph(
                 Command(resume={"approved": approved, "comment": comment}),
-                pending["run_id"], thread_id, pending["message"]):
+                pending["run_id"], thread_id, pending["message"], pending=pending):
             yield chunk
 
     return StreamingResponse(gen(), media_type="text/event-stream")

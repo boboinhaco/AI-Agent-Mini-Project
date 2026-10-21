@@ -271,3 +271,19 @@ curl -s "localhost:8100/incidents/1?format=md"
 
 실측(ollama): "넌 누구야 뭘 할 수 있어" → 역할 소개 · "난 홍길동이야" → 인사(chat) · "질문 몇 개 했어" → "user 메시지: 2개" ·
 "디스크 공간이 부족하다고 알람이 왔어" → 6개 시스템 탐색 → log-service 선별(disk-full) → 디스크 runbook 기반 답변.
+
+
+## 5차 — 두 관점 검토(시니어 개발자 / 사용자) 반영
+
+검토 항목 전체와 상태는 [REVIEW.md](REVIEW.md). 핵심 변경:
+
+| 영역 | 변경 | 파일 |
+|---|---|---|
+| 승인 흐름 | `write → validate → approval → finalize`로 순서 변경(검증 통과 초안만 승인). 승인·거절한 조치를 state에 기억해 재질문 없음. 거절된 조치가 재작성에 또 나오면 즉시 '실행 금지' 경고로 종료. "~은 안 돼요/금지" 같은 부정 문맥은 감지 제외 | `agent/nodes/approval.py`, `agent/graph.py` |
+| 서버 수명주기 | 승인 대기 중 새 질문 → 대기 run 명시적 폐기(`PendingDiscarded`) + 체크포인트 삭제. interrupt 시 사용자 메시지 즉시 저장. run 종료마다 `adelete_thread`. SSE 예외는 `Error` 이벤트 + `[DONE]` 보장. `subgraphs=True`로 서브에이전트 이벤트 전달. FinalAnswer를 요약 압축보다 먼저 전송 | `server.py` |
+| 답변 품질 | 코드가 만드는 📌 머리말(시스템·상태·수치·매뉴얼), 5항목 답변 틀(상태/원인/지금 할 일/담당팀 요청/근거), 용어 한글 병기, 반려 사유 운영자 문구, 최대 시도 도달 시 '참고용' 표시 | `agent/nodes/validate.py`, `agent/*_llm.py` |
+| 업무 용어 별칭 | "결제/로그인/캐시/…" → 시스템명 매핑으로 시스템명을 몰라도 조사 | `agent/state.py`, `agent/plan_utils.py` |
+| 측정 공정성 | `systems_ok`를 선별된 facts 기준(정확 일치 옵션), 과잉 조사 지표, git SHA 기록. fake plan의 web-01 자동 추가 제거 | `eval/measure.py`, `agent/fake_llm.py` |
+| 정리 | MCP 전역 락 제거, 데모용 강제 타임아웃·인위 지연은 opt-in, plan 정규화 공용화(`plan_utils.py`), 죽은 코드·미사용 import 제거 | `agent/mcp_client.py`, `agent/subgraphs/research.py` |
+| UI/문서 | 운영자 문구 단계 라벨, 승인 카드(실행 안 함 안내·사유 입력), 오류 말풍선·중단 표시·경과 시간, 지난 리포트 HTML, 운영자 빠른 안내 | `web_chat.html`, `doc/manual_ollma.md` |
+| 테스트 | 49개 — 서버 계층(승인 1회, 거절→경고 종료, 대기 폐기, SSE 오류·서브에이전트 이벤트, 리포트 HTML), 별칭·부정 문맥 | `tests/test_server.py`, `tests/test_aliases_negation.py` |

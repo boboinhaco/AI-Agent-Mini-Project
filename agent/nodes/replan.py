@@ -17,6 +17,7 @@ async def replan_check_node(state: AgentState, deps: SupervisorDeps) -> dict:
     collected = state.get("collected", [])
     rounds = state.get("replan_rounds", 0)
     screened_event = None
+    hit = None
     if state.get("discovery") and rounds == 0:
         # 전체 탐색 결과에서 증상과 맞는 시스템만 남긴다 — 증상은 질문만으로 RAG 분류
         hit = await deps.rag.classify(build_query_text(state["query"], []))
@@ -38,7 +39,8 @@ async def replan_check_node(state: AgentState, deps: SupervisorDeps) -> dict:
             gap_tasks.append({"id": f"task-gap-sys-{i}", "agent": "research", "kind": "monitoring",
                               "target": target, "status": "pending"})
         if not has_runbook:
-            hit = await deps.rag.classify(build_query_text(state["query"], collected))
+            if hit is None:   # discovery에서 이미 분류했으면 재사용
+                hit = await deps.rag.classify(build_query_text(state["query"], collected))
             gap_tasks.append({"id": "task-gap-runbook", "agent": "research", "kind": "runbook",
                               "target": hit["incident_type"], "status": "pending",
                               "rag": {"title": hit.get("title"), "score": hit.get("score")}})

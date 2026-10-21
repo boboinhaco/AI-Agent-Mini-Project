@@ -8,13 +8,16 @@ import re
 
 from langsmith import traceable
 
-from .state import DEFAULT_SYSTEM, is_incident_query, mentioned_systems
+from .state import DEFAULT_SYSTEM, is_incident_query, target_systems
 
 
 # "제 이름은 민수입니다" / "난 홍길동이야" / "나는 철수야" / "내 이름은 영희" 모두 잡는다
 NAME_RE = re.compile(r"(?:제|내) 이름은 (\S+?)(?:입니다|이야|야|예요|에요|$)|(?:난|나는) (\S+?)(?:이야|야|입니다|예요)")
 IDENTITY_REPLY = ("저는 운영 인시던트 대응 에이전트입니다. 운영 중 장애가 생겼거나 문제가 발생한 부분을 "
-                  "말씀해 주시면 모니터링 지표·최근 로그·대응 매뉴얼을 조회해 원인과 해결 방안을 알려드릴게요.")
+                  "말씀해 주시면 모니터링 지표·최근 로그·대응 매뉴얼을 조회해 원인과 해결 방안을 알려드릴게요. "
+                  "지금 확인할 수 있는 시스템: auth-service(로그인/인증), cache-service(캐시), gateway-service(API 게이트웨이), "
+                  "log-service(로그 수집), payments-service(결제), web-01(웹 서버). "
+                  "예: 'payments-service 결제가 느려요', '디스크 부족 알람이 왔어요'")
 
 
 def _name_from(m) -> str:
@@ -73,9 +76,7 @@ class FastLLM(FakeLLM):
         """
         # KNOWN_SYSTEMS 멤버십으로 클램프 — Before는 정규식이 "billing-service"처럼 목록에
         # 없는 이름도 조사 대상으로 삼아 status=unknown 결과를 답변에 실었다.
-        systems = mentioned_systems(query) or [DEFAULT_SYSTEM]
-        if "web-01" not in systems:
-            systems.append("web-01")   # 연관 시스템 비교 조회 → Wave 10b 병렬 실행 대상
+        systems = target_systems(query) or [DEFAULT_SYSTEM]   # 쿼리가 가리킨 시스템만 (측정 공정성 — 리뷰 A6)
         tasks = [
             {"id": f"task-{i}", "agent": "research", "kind": "monitoring",
              "target": s, "status": "pending"}
@@ -108,7 +109,7 @@ class FastLLM(FakeLLM):
 
         fake 백엔드는 실제 네트워크 호출이 없어 토큰 단위로 쪼갤 대상이 없다 —
         ollama_llm.py와 인터페이스(on_token 콜백)만 맞추고 결과를 한 번에 반환한다."""
-        if re.search(r"누구|뭘 할 수|무엇을 할 수|뭐 할 수|할 수 있어", query):
+        if re.search(r"누구|뭘 할 수|무엇을 할 수|뭐 할 수|할 수 있어|뭘 물어|무엇을 물어|어떻게 써", query):
             reply = IDENTITY_REPLY
             if on_token is not None:
                 on_token(reply)

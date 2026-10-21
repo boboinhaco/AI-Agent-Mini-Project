@@ -28,7 +28,7 @@ DEFAULT_SYSTEM = "auth-service"
 INCIDENT_PATTERN = re.compile(
     r"장애|진단|다운|지연|급증|느려|느림|타임아웃|timeout|메모리|디스크|cpu|레이턴시|latency|"
     r"응답\s*없|에러|오류|504|500|저하|알림|알람|경보|경고|incident|티켓|원인|분석해|"
-    r"먹통|죽었|접속이?\s*안|안\s*돼|안됨|실패|이상해|부족",
+    r"먹통|죽었|접속이?\s*안|안\s*돼|안\s*되|안됨|실패|이상해|부족",
     re.IGNORECASE)
 # 모델이 incident라고 했을 때만 인정하는 약한 신호 — "난 홍길동이야" 같은 잡담을 장애로 보내지 않기 위함
 SOFT_INCIDENT_PATTERN = re.compile(r"서비스|시스템|서버|배포|db|api|인스턴스|노드|확인해", re.IGNORECASE)
@@ -39,10 +39,45 @@ ALERT_KEYWORDS = {
     "cpu-spike": ["cpu", "load"],
     "memory-leak": ["memory", "heap", "oom"],
     "disk-full": ["disk", "space"],
-    "high-latency": ["latency", "pool", "slow"],
+    "high-latency": ["latency", "pool", "p95"],   # "slow"는 CPU 급증 알림에도 쓰여 제외
     "network-timeout": ["timeout", "packet", "504", "network"],
     "db-down": ["down", "database", "db "],
 }
+
+
+# 업무 용어 → 시스템명 (비개발 운영자는 'payments-service'를 모른다 — "결제가 안 돼요"로도 조사되게)
+SYSTEM_ALIASES = {
+    "payments-service": ["결제", "페이먼트", "payment", "정산"],
+    "auth-service": ["로그인", "인증", "auth", "계정", "회원"],
+    "cache-service": ["캐시", "cache", "세션 캐시"],
+    "gateway-service": ["게이트웨이", "gateway", "api", "라우터"],
+    "log-service": ["로그 서버", "로그 서비스", "로그 수집", "/var/log", "로그 저장"],
+    "web-01": ["웹 서버", "홈페이지", "웹페이지", "nginx", "web"],
+}
+SYSTEM_LABELS = {
+    "payments-service": "결제", "auth-service": "로그인/인증", "cache-service": "캐시",
+    "gateway-service": "API 게이트웨이", "log-service": "로그 수집", "web-01": "웹 서버",
+}
+
+
+def aliased_systems(query: str) -> list[str]:
+    """업무 용어로 가리킨 시스템 — 명시적 시스템명이 없을 때만 보조로 쓴다."""
+    q = query.lower()
+    found = []
+    for name, words in SYSTEM_ALIASES.items():
+        pos = [q.find(w.lower()) for w in words if w.lower() in q]
+        if pos:
+            found.append((min(pos), name))
+    return [n for _, n in sorted(found)]
+
+
+def target_systems(query: str) -> list[str]:
+    """조사 대상 — 명시적 시스템명 우선, 없으면 업무 용어 별칭."""
+    return mentioned_systems(query) or aliased_systems(query)
+
+
+def system_label(name: str) -> str:
+    return f"{name}({SYSTEM_LABELS[name]})" if name in SYSTEM_LABELS else name
 
 
 def mentioned_systems(query: str) -> list[str]:
@@ -67,15 +102,18 @@ def decide_route(query: str, model_route: str) -> tuple[str, str | None]:
     return "chat", ("incident→chat" if model_route == "incident" else None)
 
 
+MAX_SCREENED = 3   # 전체 탐색 후 남길 시스템 상한 — 많이 남기면 검증(수치 인용) 부담이 커진다
+
+
 def relevant_systems(collected: list[dict], incident_type: str) -> list[str]:
-    """전체 탐색 결과 중 증상과 맞는 시스템 — 알림 키워드 매칭, 없으면 저하(degraded/down) 시스템."""
+    """전체 탐색 결과 중 증상과 맞는 시스템 — 알림 키워드 매칭, 없으면 저하(degraded/down) 시스템. 최대 MAX_SCREENED."""
     keywords = ALERT_KEYWORDS.get(incident_type, [])
     mon = [c["data"] for c in collected if c.get("source") == "monitoring"]
     matched = [d["system_name"] for d in mon
                if any(k in (" ".join(d.get("alerts", [])) + " " + d.get("status", "")).lower() for k in keywords)]
-    if matched:
-        return matched
-    return [d["system_name"] for d in mon if d.get("status") not in ("healthy", "unknown")]
+    if not matched:
+        matched = [d["system_name"] for d in mon if d.get("status") not in ("healthy", "unknown")]
+    return matched[:MAX_SCREENED]
 
 
 def extract_system_name(query: str) -> str:
@@ -102,6 +140,9 @@ class AgentState(TypedDict, total=False):
     approval: dict | None
     approval_rejections: int
     discovery: bool
+    draft_revision: int
+    approved_actions: list[str]
+    rejected_actions: list[str]
     final: str
     last_prompt: str
     cost_usd: float

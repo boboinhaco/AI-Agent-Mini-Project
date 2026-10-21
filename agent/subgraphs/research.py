@@ -11,6 +11,7 @@
 """
 import asyncio
 import operator
+import os
 import time
 from functools import partial
 from typing import Annotated, TypedDict
@@ -22,7 +23,7 @@ from langsmith import traceable
 from ..deps import SupervisorDeps
 from ..retry import with_retry
 
-TASK_DELAY = 0.35   # 태스크당 고정 지연 — 병렬 효과를 실측하기 위함 (기존 research_node와 동일)
+TASK_DELAY = float(os.environ.get("RESEARCH_TASK_DELAY", "0"))   # 데모용 인위 지연(초). 기본 0 — 실제 병렬 시간만 측정
 
 
 class ResearchState(TypedDict, total=False):
@@ -45,10 +46,8 @@ def _pending(tasks: list[dict], kind: str) -> list[dict]:
 
 
 def _emit(agent: str, status: str, **extra):
-    try:
-        get_stream_writer()({"type": "SubAgent", "agent": agent, "status": status, **extra})
-    except Exception:   # 스트리밍 컨텍스트가 아니면 무시
-        pass
+    """custom 스트림 이벤트 — 서버가 astream(subgraphs=True)로 받아야 전달된다."""
+    get_stream_writer()({"type": "SubAgent", "agent": agent, "status": status, **extra})
 
 
 @traceable(name="research.dispatch")

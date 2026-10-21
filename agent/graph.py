@@ -2,7 +2,7 @@
 
 route → (chat 직행 | incident 파이프라인)
 incident: plan → gate → research(서브그래프: metrics/log/runbook 에이전트) → replan_check(RAG)
-          → analysis → write → approval(HITL interrupt) → validate → finalize
+          → analysis → write → validate → approval(HITL interrupt, 검증 통과 초안만) → finalize
 
 모든 노드는 SupervisorDeps를 functools.partial로 주입받는 순수 함수다(Wave 13).
 """
@@ -17,8 +17,6 @@ from .nodes import (analysis_node, approval_node, chat_answer_node, finalize_nod
 from .state import AgentState
 from .subgraphs import build_research_subgraph
 
-# 하위 호환 — 외부에서 graph.KNOWN_SYSTEMS 등을 참조하던 코드용
-from .state import KNOWN_SYSTEMS, extract_system_name as _extract_system_name  # noqa: F401
 
 
 def _after_route(state: AgentState) -> str:
@@ -30,16 +28,17 @@ def _after_replan_check(state: AgentState) -> str:
     return "analysis" if last.get("is_sufficient") else "research"
 
 
+def _after_validate(state: AgentState) -> str:
+    """불합격이면 재작성, 합격이면 승인 단계로 (폐기될 초안을 승인받지 않는다)."""
+    return "approval" if state.get("validation_feedback") is None else "write"
+
+
 def _after_approval(state: AgentState) -> str:
-    """거절되면 피드백을 들고 write로 되돌아간다 (거절 횟수 상한 초과 시 validate로 진행)."""
+    """거절되면 피드백을 들고 write로 되돌아간다. 승인·생략·에스컬레이션이면 확정."""
     approval = state.get("approval")
     if approval and not approval.get("approved") and not approval.get("escalated"):
         return "write"
-    return "validate"
-
-
-def _after_validate(state: AgentState) -> str:
-    return "finalize" if state.get("validation_feedback") is None else "write"
+    return "finalize"
 
 
 def build_graph(deps: SupervisorDeps):
@@ -67,11 +66,11 @@ def build_graph(deps: SupervisorDeps):
     g.add_conditional_edges("replan_check", _after_replan_check,
                             {"analysis": "analysis", "research": "research"})
     g.add_edge("analysis", "write")
-    g.add_edge("write", "approval")
-    g.add_conditional_edges("approval", _after_approval,
-                            {"write": "write", "validate": "validate"})
+    g.add_edge("write", "validate")
     g.add_conditional_edges("validate", _after_validate,
-                            {"finalize": "finalize", "write": "write"})
+                            {"approval": "approval", "write": "write"})
+    g.add_conditional_edges("approval", _after_approval,
+                            {"write": "write", "finalize": "finalize"})
     g.add_edge("finalize", END)
     # interrupt()/resume에는 체크포인터가 필요하다. 요청마다 고유 thread_id(run_id)를 쓰므로
     # 메모리 체크포인터로 충분하다(서버 재시작 시 '승인 대기 중'인 run만 사라진다).

@@ -17,7 +17,7 @@ from pathlib import Path
 import httpx
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 BACKEND = "http://127.0.0.1:8100"
 HERE = Path(__file__).parent
@@ -34,16 +34,16 @@ async def index():
 async def proxy_health():
     async with httpx.AsyncClient(timeout=10.0) as client:
         r = await client.get(f"{BACKEND}/health")
-    return JSONResponse(r.json(), status_code=r.status_code)
+    return _passthrough(r)
 
 
 @app.post("/chat")
 async def proxy_chat(req: Request):
     body = await req.body()
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=600.0) as client:   # 실모델 장애 질문은 2~3분 걸릴 수 있다
         r = await client.post(f"{BACKEND}/chat", content=body,
                               headers={"content-type": "application/json"})
-    return JSONResponse(r.json(), status_code=r.status_code)
+    return _passthrough(r)
 
 
 def _relay(path: str, params: dict):
@@ -67,30 +67,34 @@ async def proxy_approve_stream(thread_id: str = "web-demo", approved: bool = Tru
                   {"thread_id": thread_id, "approved": str(approved).lower(), "comment": comment})
 
 
+def _passthrough(r: httpx.Response):
+    """백엔드 응답을 종류(JSON/HTML/텍스트) 그대로 넘긴다 — 500 본문이 JSON이 아니어도 깨지지 않게."""
+    from fastapi.responses import Response
+    return Response(content=r.content, status_code=r.status_code,
+                    media_type=r.headers.get("content-type", "application/octet-stream"))
+
+
 @app.get("/incidents")
-async def proxy_incidents(limit: int = 50):
+async def proxy_incidents(limit: int = 50, format: str = "json"):
     async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.get(f"{BACKEND}/incidents", params={"limit": limit})
-    return JSONResponse(r.json(), status_code=r.status_code)
+        r = await client.get(f"{BACKEND}/incidents", params={"limit": limit, "format": format})
+    return _passthrough(r)
 
 
 @app.get("/incidents/{incident_id}")
 async def proxy_incident(incident_id: int, format: str = "json"):
     async with httpx.AsyncClient(timeout=10.0) as client:
         r = await client.get(f"{BACKEND}/incidents/{incident_id}", params={"format": format})
-    if format == "md":
-        from fastapi.responses import PlainTextResponse
-        return PlainTextResponse(r.text, status_code=r.status_code, media_type="text/markdown; charset=utf-8")
-    return JSONResponse(r.json(), status_code=r.status_code)
+    return _passthrough(r)
 
 
 @app.get("/session/{thread_id}")
 async def proxy_session(thread_id: str):
     async with httpx.AsyncClient(timeout=10.0) as client:
         r = await client.get(f"{BACKEND}/session/{thread_id}")
-    return JSONResponse(r.json(), status_code=r.status_code)
+    return _passthrough(r)
 
 
 if __name__ == "__main__":
     print("브라우저에서 http://localhost:8600 을 열어보세요 (server.py가 8100에 떠 있어야 합니다)")
-    uvicorn.run(app, host="0.0.0.0", port=8600)
+    uvicorn.run(app, host="127.0.0.1", port=8600)   # 로컬 데모 — 외부 노출 안 함

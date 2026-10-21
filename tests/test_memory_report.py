@@ -31,8 +31,10 @@ def test_build_and_store_report(deps):
               "events": [{"type": "RouteDecided", "route": "incident"},
                          {"type": "TaskCompleted", "source": "runbook", "target": "disk-full"},
                          {"type": "Validation", "verdict": "합격", "reasons": []}]}
+    result["approved_actions"] = ["파일/데이터 삭제"]; result["rejected_actions"] = ["서비스/프로세스 재시작"]
     rep = build_report("log-service 디스크 부족", result, "t")
     assert rep["incident_type"] == "disk-full" and rep["systems"] == ["log-service"]
+    assert "거절한 조치(실행 금지): 서비스/프로세스 재시작" in rep["report"] and "실제 과금 아님" in rep["report"]
     assert "## 타임라인" in rep["report"] and "disk usage 95%" in rep["report"]
     iid = deps.session_store.save_incident("t", "q", rep["incident_type"], rep["systems"], rep["report"])
     assert deps.session_store.get_incident(iid)["incident_type"] == "disk-full"

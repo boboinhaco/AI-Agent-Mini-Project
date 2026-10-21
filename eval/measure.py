@@ -32,9 +32,10 @@ QUERIES = [
      "route": "incident", "systems": {"payments-service", "cache-service"}, "runbook": None,
      "analysis": True},
     {"id": 7, "q": "로그인 응답이 느려요, 원인 확인해주세요",
-     "route": "incident", "systems": {"auth-service"}, "runbook": None},
+     "route": "incident", "systems": {"auth-service"}, "runbook": "high-latency", "exact": True},   # '로그인' 별칭
     {"id": 8, "q": "billing-service 응답이 느려요",
-     "route": "incident", "systems": {"auth-service"}, "runbook": None, "forbid": {"billing-service"}},
+     "route": "incident", "systems": {"auth-service"}, "runbook": "high-latency", "forbid": {"billing-service"},
+     "exact": True},   # 목록 밖 이름 → 전체 탐색 → '응답 지연' 증상과 맞는 auth-service만 선별
     {"id": 9, "q": "안녕, 너는 누구야?", "route": "chat"},
     {"id": 10, "q": "제 이름은 민수입니다", "followup": "제 이름이 뭐였죠?", "route": "chat",
      "reply_contains": "민수"},
@@ -64,11 +65,14 @@ def check(spec: dict, data: dict) -> dict:
     results = {}
     results["route_ok"] = meta.get("route") == spec["route"]
     if spec["route"] == "incident":
-        investigated = {e["target"] for e in events
-                        if e.get("type") == "TaskCompleted" and e.get("source") == "monitoring"}
+        # 조사 시스템 = 최종 답변의 근거(facts, 선별 후). 이벤트 기준이면 전체 탐색이 항상 통과해 지표가 부풀려진다(리뷰 A6)
+        investigated = {d["system_name"] for d in data.get("facts", [])} or \
+            {e["target"] for e in events if e.get("type") == "TaskCompleted" and e.get("source") == "monitoring"}
         runbooks = {e["target"] for e in events
                     if e.get("type") == "TaskCompleted" and e.get("source") == "runbook"}
-        results["systems_ok"] = spec["systems"].issubset(investigated)
+        results["systems_ok"] = (investigated == spec["systems"]) if spec.get("exact") \
+            else spec["systems"].issubset(investigated)
+        results["over_investigated"] = len(investigated - spec["systems"])   # 과잉 조사 수 (정보용)
         if spec.get("forbid"):
             # 목록에 없는 시스템을 '조사 대상'으로 삼지 않았는지 (질문 인용은 허용)
             results["no_fake_system"] = not (spec["forbid"] & investigated)
@@ -125,6 +129,7 @@ def main():
                 "approvals": data.get("approvals", 0),
                 "reply_len": len(data["reply"]),
                 "checks_passed": sum(bool_checks.values()), "checks_total": len(bool_checks),
+                "over_investigated": checks.get("over_investigated", 0),
                 "investigated": ",".join(checks.get("investigated", [])),
                 "runbooks": ",".join(checks.get("runbooks", [])),
                 "langsmith_run_id": meta.get("langsmith_run_id"),
@@ -139,8 +144,14 @@ def main():
                   f"val={row['validation_attempts']} cost={row['cost_usd']} "
                   f"checks={row['checks_passed']}/{row['checks_total']}")
 
+    import subprocess
+    try:
+        sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    except Exception:
+        sha = None
     (out / f"metrics_{args.label}.json").write_text(
-        json.dumps({"health": health, "rows": rows}, ensure_ascii=False, indent=2))
+        json.dumps({"health": health, "git_sha": sha, "measured_at": time.strftime("%Y-%m-%d %H:%M"),
+                    "rows": rows}, ensure_ascii=False, indent=2))
     csv_cols = ["id", "query", "latency_s", "route", "task_count", "gate_removed", "replan_rounds",
                 "retry_count", "parallel_elapsed", "validation_attempts", "approvals", "cost_usd", "reply_len",
                 "checks_passed", "checks_total", "investigated", "runbooks"]
@@ -155,7 +166,7 @@ def main():
     tot_cost = sum(r["cost_usd"] or 0 for r in rows)
     passed = sum(r["checks_passed"] for r in rows)
     total = sum(r["checks_total"] for r in rows)
-    lines = [f"# 측정 요약 — {args.label}", "",
+    lines = [f"# 측정 요약 — {args.label}", "", f"- 코드: git {sha} · 측정 {time.strftime('%Y-%m-%d %H:%M')}",
              f"- 백엔드: {health.get('llm_backend')} (fast={health.get('fast_llm')}, quality={health.get('quality_llm')})",
              f"- supervisor_version: {health.get('supervisor_version')}",
              f"- 쿼리 수: {n}", f"- 총 지연시간: {tot_lat:.1f}s (평균 {tot_lat/n:.1f}s)",
@@ -163,7 +174,8 @@ def main():
              f"- 정확도 체크 통과: {passed}/{total} ({passed/total*100:.0f}%)",
              f"- 검증 재작성 발생 쿼리: {sum(1 for r in rows if (r['validation_attempts'] or 0) > 1)}건",
              f"- 재시도(retry) 총합: {sum(r['retry_count'] or 0 for r in rows)}",
-             f"- 운영자 승인(HITL) 요청 횟수: {sum(r.get('approvals', 0) for r in rows)}", "",
+             f"- 운영자 승인(HITL) 요청 횟수: {sum(r.get('approvals', 0) for r in rows)}",
+             f"- 과잉 조사(기대 밖 시스템) 합계: {sum(r.get('over_investigated', 0) for r in rows)}", "",
              "| # | 지연(s) | route | tasks | 검증시도 | cost | 조사 시스템 | runbook | 체크 |", "|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         failed = [k for k, v in r["checks"].items() if v is False]

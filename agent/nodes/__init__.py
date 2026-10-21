@@ -6,7 +6,6 @@ from .analysis import analysis_node
 from .approval import approval_node
 from .plan import gate_node, plan_node
 from .replan import replan_check_node
-from .research import research_node
 from .route import chat_answer_node, route_node
 from .validate import finalize_node, validate_node
 from .write import write_node

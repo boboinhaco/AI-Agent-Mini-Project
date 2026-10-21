@@ -5,7 +5,7 @@
     "cites_correctly": 1,
     "no_invention": 1,
     "actionable": 1,
-    "comment": "정확한 시스템 상태와 원인을 파악하고 구체적인 조치를 제시함",
+    "comment": "실측 데이터와 일치하며 구체적인 조치 제안",
     "score": 3
   },
   {
@@ -14,7 +14,7 @@
     "cites_correctly": 1,
     "no_invention": 1,
     "actionable": 1,
-    "comment": "실측 데이터와 일치하며 구체적 조치 제시",
+    "comment": "실측 데이터와 정확히 일치하며, 구체적인 조치사항을 제시함",
     "score": 3
   },
   {
@@ -23,7 +23,7 @@
     "cites_correctly": 1,
     "no_invention": 1,
     "actionable": 1,
-    "comment": "디스크 사용률과 관련된 실측 데이터를 정확히 반영하고, 구체적인 조치 방안을 제시함",
+    "comment": "실측 데이터와 일치하는 시스템 상태 및 수치를 정확히 반영하고, 구체적인 조치 사항을 제시했습니다.",
     "score": 3
   },
   {
@@ -32,17 +32,17 @@
     "cites_correctly": 1,
     "no_invention": 1,
     "actionable": 1,
-    "comment": "정확한 데이터 인용과 구체적인 대응 조치 제시로 적절한 분석 수행",
+    "comment": "정확한 시스템 상태와 원인을 파악하고 구체적인 조치를 제시했습니다.",
     "score": 3
   },
   {
     "id": 5,
     "query": "web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘",
-    "cites_correctly": 0,
-    "no_invention": 0,
-    "actionable": 0,
-    "comment": "채점 실패: ReadTimeout",
-    "score": 0
+    "cites_correctly": 1,
+    "no_invention": 1,
+    "actionable": 1,
+    "comment": "실측 데이터와 일치하며 구체적인 조치 제안",
+    "score": 3
   },
   {
     "id": 6,
@@ -50,7 +50,7 @@
     "cites_correctly": 1,
     "no_invention": 1,
     "actionable": 1,
-    "comment": "공통 원인(배포 변경)과 개별 원인(중복 작업, 메모리 누수)을 정확히 분석하고 구체적 대응 방안 제시",
+    "comment": "정확한 시스템 상태와 원인을 분석해 구체적인 조치를 제시함",
     "score": 3
   },
   {
@@ -59,7 +59,7 @@
     "cites_correctly": 1,
     "no_invention": 1,
     "actionable": 1,
-    "comment": "실측 데이터와 정확히 일치하며, 구체적인 조치안을 제시함",
+    "comment": "모든 조치가 실제 데이터와 일치하며 구체적입니다.",
     "score": 3
   },
   {
@@ -68,7 +68,7 @@
     "cites_correctly": 1,
     "no_invention": 1,
     "actionable": 1,
-    "comment": "실측 데이터와 정확히 일치하며, 구체적인 조치 방안을 제시함",
+    "comment": "정확한 시스템 상태와 원인 분석, 구체적인 조치 제안",
     "score": 3
   }
 ]

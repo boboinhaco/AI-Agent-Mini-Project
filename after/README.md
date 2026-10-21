@@ -79,3 +79,20 @@
 ```
 
 추가 파일: `judge_{fake,ollama}.{md,json}`, `screens/fake_uc6_done_marks_report.png`
+
+---
+
+## 5차 — 두 관점 검토 반영 후 재측정 (현재 코드)
+
+| 지표 | 3차 | 5차 |
+|---|---|---|
+| ollama 정확도 | 32 / 32 | **34 / 34** (더 엄격한 systems_ok) |
+| HITL 승인 요청 | 6회 | **4회** (질문당 1회) |
+| 과잉 조사 | — | **0** |
+| LLM-as-judge | 21 / 24 | **24 / 24** |
+| 총 지연 · cost | 657s · 0.094 | 791s · 0.137 |
+| pytest | 32 | 49 |
+
+화면: `screens/fake_v5_reject_flow.png`(거절 → 경고 종료, 📌 머리말), `screens/fake_v5_alias_payment.png`("결제가 안 돼요" → payments-service),
+`screens/ollama_uc3_two_systems.png`(두 시스템 + 5항목 답변, 재캡처). 정정: 이전 "SubAgent 이벤트가 SSE에 찍힌다"는 설명은 4차까지는
+사실이 아니었고(`subgraphs=True` 누락), 5차에서 실제로 전달된다.

@@ -3,103 +3,103 @@
     {
       "turn": 1,
       "message": "제 이름은 민수입니다",
-      "reply": "제 이름은 민수입니다. 어떻게 도움을 받실 수 있나요?",
+      "reply": "안녕하세요, 민수님!  \n운영 인시던트 대응 에이전트입니다.  \nauth-service, cache-service, gateway-service, log-service, payments-service, web-01 등 시스템 관련 문제(예: 결제 지연, 디스크 알람)가 발생하면 원인과 해결 방법을 안내해 드립니다.  \n어떤 시스템이 문제인가요?",
       "memory": null,
       "total_messages": 2,
       "summarized_messages": 0,
       "history_messages": 2,
-      "history_chars": 41
+      "history_chars": 204
     },
     {
       "turn": 2,
       "message": "안녕, 너는 누구야?",
-      "reply": "안녕하세요, 저는 민수입니다. 어떻게 도움을 받실 수 있나요?",
+      "reply": "안녕하세요, 민수님! 운영 인시던트 대응 에이전트입니다. auth-service, cache-service, payments-service 등 시스템의 문제(예: 결제 지연, 디스크 알람) 발생 시 원인과 해결 방법을 안내해 드립니다. 어떤 시스템이 문제인가요?",
       "memory": null,
       "total_messages": 4,
       "summarized_messages": 0,
       "history_messages": 4,
-      "history_chars": 86
+      "history_chars": 361
     },
     {
       "turn": 3,
       "message": "오늘 날씨 어때?",
-      "reply": "오늘은 흑색 날씨입니다. 🌤",
+      "reply": "오늘 날씨는 어때요? 날씨가 좋아 보이네요!",
       "memory": null,
       "total_messages": 6,
       "summarized_messages": 0,
       "history_messages": 6,
-      "history_chars": 110
+      "history_chars": 394
     },
     {
       "turn": 4,
       "message": "점심 메뉴 추천해줘",
-      "reply": "점심 메뉴 추천해줘요! 🍱요리 추천해 드릴 수 있어요!",
+      "reply": "점심 메뉴 추천은 제가 도와드릴 수 없어요. 운영 시스템 관련 문제(예: 결제 지연, 디스크 알람)가 발생했을 경우 원인과 해결 방법을 안내해 드릴 수 있습니다. 어떤 시스템이 문제인가요?",
       "memory": null,
       "total_messages": 8,
       "summarized_messages": 0,
       "history_messages": 8,
-      "history_chars": 150
+      "history_chars": 509
     },
     {
       "turn": 5,
       "message": "나는 서울에 살아",
-      "reply": "네, 서울에 살고 있어요. 어떻게 도움을 받실 수 있나요? 😊",
+      "reply": "서울에서 살아요? 날씨가 좋아 보이네요! 운영 시스템 관련 문제가 있으면 도와드릴게요.",
       "memory": null,
       "total_messages": 10,
       "summarized_messages": 0,
       "history_messages": 10,
-      "history_chars": 193
+      "history_chars": 566
     },
     {
       "turn": 6,
       "message": "취미는 등산이야",
-      "reply": "내가 산을 떠나고 있어요. 산을 떠나는 것처럼 도움을 받실 수 있어요! 🏞️",
+      "reply": "등산 좋아하시네요! 계산산이나 북한산 등산하시나요? 운영 시스템 관련 문제가 또 있으면 언제든 도와드릴게요.",
       "memory": {
         "summarized": 8,
-        "summary_chars": 81,
-        "cost_usd": 0.00287
+        "summary_chars": 97,
+        "cost_usd": 0.003545
       },
       "total_messages": 12,
       "summarized_messages": 8,
       "history_messages": 5,
-      "history_chars": 185
+      "history_chars": 233
     },
     {
       "turn": 7,
       "message": "주말에 뭐 하면 좋을까?",
-      "reply": "주말에 산을 떠나는 것처럼 도움을 받을 수 있어요! 🏞️",
+      "reply": "서울에서 주말엔 북한산 등산이나 명동 거리漫步, 혹은 맛집 탐방도 좋겠어요! 등산 좋아하시면 계산산이나 둔치산 추천드릴 수 있어요. 😊",
       "memory": null,
       "total_messages": 14,
       "summarized_messages": 8,
       "history_messages": 7,
-      "history_chars": 229
+      "history_chars": 321
     },
     {
       "turn": 8,
       "message": "고마워",
-      "reply": "감사합니다! 😊",
+      "reply": "네, 도와드릴게요! 😊 또 궁금한 점이 있으면 언제든 물어보세요.",
       "memory": null,
       "total_messages": 16,
       "summarized_messages": 8,
       "history_messages": 9,
-      "history_chars": 240
+      "history_chars": 360
     },
     {
       "turn": 9,
       "message": "제 이름이 뭐였죠?",
-      "reply": "제 이름은 민수입니다. 산을 떠나는 것처럼 도움을 받을 수 있어요! 🏞️",
+      "reply": "민수 님입니다! 😊 운영 시스템 관련 문제가 또 있으면 언제든 도와드릴게요.",
       "memory": null,
       "total_messages": 18,
       "summarized_messages": 8,
       "history_messages": 11,
-      "history_chars": 290
+      "history_chars": 412
     }
   ],
   "final": {
     "total_messages": 18,
     "summarized_messages": 8,
     "history_messages": 11,
-    "history_chars": 290,
-    "summary": "사용자 이름: 민수  \n주요 사실: 민수가 자기 이름을 밝힘, 날씨에 대한 질문, 점심 메뉴 추천 요청  \n진행 중인 요청: 점심 메뉴 추천 요청"
+    "history_chars": 412,
+    "summary": "사용자 이름: 민수  \n주요 사실: 운영 인시던트 대응 에이전트, 시스템 문제(결제 지연, 디스크 알람 등), 점심 메뉴 추천 요청  \n진행 중인 요청: 점심 메뉴 추천 요청"
   }
 }

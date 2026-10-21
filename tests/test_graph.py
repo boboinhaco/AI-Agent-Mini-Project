@@ -32,7 +32,7 @@ async def test_incident_pipeline_runs_subagents_and_rag(graph, deps):
     assert runbooks == ["memory-leak"]                      # RAG가 고른 runbook
     assert ("get_recent_logs", "cache-service") in deps.mcp.calls
     assert r["validation_attempts"] == 2                    # 1차 초안(짧음) 반려 → 2차 합격
-    assert "1)" in r["final"] and "cache-service" in r["final"]
+    assert "1)" in r["final"] and r["final"].startswith("📌 cache-service")
 
 
 @pytest.mark.asyncio
@@ -46,8 +46,8 @@ async def test_two_systems_both_investigated(graph):
 @pytest.mark.asyncio
 async def test_unknown_system_not_investigated(graph):
     r = await graph.ainvoke(base_input("billing-service 응답이 느려요"), config=run_config("unk"))
-    investigated = {e["target"] for e in r["events"] if e["type"] == "TaskCompleted" and e["source"] == "monitoring"}
-    assert "billing-service" not in investigated and "auth-service" in investigated
+    facts = {c["data"]["system_name"] for c in r["collected"] if c["source"] == "monitoring"}
+    assert facts == {"auth-service"}                          # 전체 탐색 후 '응답 지연' 증상과 맞는 시스템만 선별
 
 
 @pytest.mark.asyncio
@@ -64,8 +64,8 @@ async def test_hitl_interrupt_and_resume(deps):
     while r2.get("__interrupt__") and approvals < 4:
         r2 = await g.ainvoke(Command(resume={"approved": True}), config=cfg)
         approvals += 1
-    assert not r2.get("__interrupt__") and approvals >= 1
-    assert types(r2).count("ApprovalGranted") == approvals and r2["final"]
+    assert not r2.get("__interrupt__") and approvals == 1            # 검증 통과 초안만 승인 → 정확히 1회 (리뷰 A5)
+    assert types(r2).count("ApprovalGranted") == 1 and r2["final"]
 
 
 @pytest.mark.asyncio
