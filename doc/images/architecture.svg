@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="870" viewBox="0 0 1560 870" font-family="-apple-system, Apple SD Gothic Neo, Malgun Gothic, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b3f52"/></marker></defs>
+<rect width="1560" height="870" fill="#ffffff"/>
+<rect x="40" y="30" width="260" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="170.0" y="56.0" text-anchor="middle" font-size="13" fill="#1d2030" font-weight="600">브라우저</text>
+<text x="170.0" y="73.0" text-anchor="middle" font-size="12" fill="#6b7086">web_chat.html (Vue 3)</text>
+<rect x="400" y="30" width="300" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="550.0" y="56.0" text-anchor="middle" font-size="13" fill="#1d2030" font-weight="600">web_demo_server.py (:8600)</text>
+<text x="550.0" y="73.0" text-anchor="middle" font-size="12" fill="#6b7086">정적 페이지 + /chat · /approve · /incidents 프록시</text>
+<rect x="800" y="30" width="400" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="1000.0" y="56.0" text-anchor="middle" font-size="13" fill="#1d2030" font-weight="600">server.py — FastAPI (:8100)</text>
+<text x="1000.0" y="73.0" text-anchor="middle" font-size="12" fill="#6b7086">/chat · /chat/stream · /chat/approve · /session · /incidents</text>
+<rect x="1300" y="30" width="220" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="1410.0" y="56.0" text-anchor="middle" font-size="13" fill="#1d2030" font-weight="600">SQLite session.db</text>
+<text x="1410.0" y="73.0" text-anchor="middle" font-size="12" fill="#6b7086">messages · summaries · incidents</text>
+<path d="M300,60 L400,60" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="350" y="52" text-anchor="middle" font-size="11" fill="#6b7086">same-origin</text>
+<path d="M700,60 L800,60" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="750" y="52" text-anchor="middle" font-size="11" fill="#6b7086">HTTP / SSE</text>
+<path d="M1200,60 L1300,60" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1250" y="52" text-anchor="middle" font-size="11" fill="#6b7086">이력 · 요약 · 리포트</text>
+<path d="M1000,90 L1000,170" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1008" y="135" text-anchor="start" font-size="11" fill="#6b7086">ainvoke / astream · Command(resume)</text>
+<rect x="40" y="170" width="1480" height="390" rx="12" fill="#f6f6fa" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="56" y="194" font-size="13" font-weight="600" fill="#1d2030">agent/graph.py — LangGraph v2 (체크포인터: MemorySaver)</text>
+<rect x="70" y="265" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="120.0" y="291.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">route</text>
+<text x="120.0" y="307.2" text-anchor="middle" font-size="11" fill="#6b7086">라우팅</text>
+<rect x="188" y="265" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="238.0" y="291.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">plan</text>
+<text x="238.0" y="307.2" text-anchor="middle" font-size="11" fill="#6b7086">계획 (MCP Prompt)</text>
+<rect x="306" y="265" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="356.0" y="291.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">gate</text>
+<text x="356.0" y="307.2" text-anchor="middle" font-size="11" fill="#6b7086">게이트</text>
+<rect x="424" y="210" width="330" height="170" rx="10" fill="#fff4df" stroke="#3b3f52" stroke-width="1.4" stroke-dasharray="6 4"/>
+<text x="434" y="228" font-size="12" font-weight="600" fill="#1d2030">research — 서브그래프 (멀티 에이전트)</text>
+<rect x="436" y="275" width="70" height="40" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="471.0" y="299.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">dispatch</text>
+<rect x="542" y="240" width="110" height="32" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="597.0" y="259.9" text-anchor="middle" font-size="11" fill="#1d2030" font-weight="600">metrics_agent</text>
+<rect x="542" y="290" width="110" height="32" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="597.0" y="309.9" text-anchor="middle" font-size="11" fill="#1d2030" font-weight="600">log_agent</text>
+<rect x="542" y="340" width="110" height="32" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="597.0" y="359.9" text-anchor="middle" font-size="11" fill="#1d2030" font-weight="600">runbook_agent</text>
+<rect x="674" y="275" width="68" height="40" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="708.0" y="299.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">merge</text>
+<path d="M506,295 L524,295" fill="none" stroke="#3b3f52" stroke-width="1.6"/>
+<path d="M524,256 L524,356" fill="none" stroke="#3b3f52" stroke-width="1.6"/>
+<path d="M524,256 L542,256" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M524,306 L542,306" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M524,356 L542,356" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M652,256 L664,256" fill="none" stroke="#3b3f52" stroke-width="1.6"/>
+<path d="M652,306 L664,306" fill="none" stroke="#3b3f52" stroke-width="1.6"/>
+<path d="M652,356 L664,356" fill="none" stroke="#3b3f52" stroke-width="1.6"/>
+<path d="M664,256 L664,356" fill="none" stroke="#3b3f52" stroke-width="1.6"/>
+<path d="M664,295 L674,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="772" y="265" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="822.0" y="291.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">replan_check</text>
+<text x="822.0" y="307.2" text-anchor="middle" font-size="11" fill="#6b7086">재계획 · RAG</text>
+<rect x="890" y="265" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="940.0" y="291.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">analysis</text>
+<text x="940.0" y="307.2" text-anchor="middle" font-size="11" fill="#6b7086">비교 분석</text>
+<rect x="1008" y="265" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="1058.0" y="291.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">write</text>
+<text x="1058.0" y="307.2" text-anchor="middle" font-size="11" fill="#6b7086">초안 작성</text>
+<rect x="1126" y="265" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="1176.0" y="291.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">approval</text>
+<text x="1176.0" y="307.2" text-anchor="middle" font-size="11" fill="#6b7086">HITL interrupt</text>
+<rect x="1244" y="265" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="1294.0" y="291.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">validate</text>
+<text x="1294.0" y="307.2" text-anchor="middle" font-size="11" fill="#6b7086">코드 검증</text>
+<rect x="1362" y="265" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="1412.0" y="291.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">finalize</text>
+<text x="1412.0" y="307.2" text-anchor="middle" font-size="11" fill="#6b7086">확정</text>
+<path d="M170,295 L188,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M288,295 L306,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M406,295 L424,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M754,295 L772,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M872,295 L890,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M990,295 L1008,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M1108,295 L1126,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M1226,295 L1244,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M1344,295 L1362,295" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="179" y="252" text-anchor="middle" font-size="10" fill="#6b7086">incident</text>
+<text x="1235" y="252" text-anchor="middle" font-size="10" fill="#6b7086">승인</text>
+<text x="1353" y="252" text-anchor="middle" font-size="10" fill="#6b7086">합격</text>
+<rect x="70" y="430" width="100" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="120.0" y="456.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">chat_answer</text>
+<text x="120.0" y="472.2" text-anchor="middle" font-size="11" fill="#6b7086">대화 (요약 메모리)</text>
+<path d="M120,325 L120,430" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="126" y="382" text-anchor="start" font-size="10" fill="#6b7086">chat</text>
+<path d="M822,325 L822,410 L589,410 L589,380" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="599" y="404" text-anchor="start" font-size="10" fill="#6b7086">부족 → 누락 시스템 · runbook 추가 조사</text>
+<path d="M1176,325 L1176,410 L1058,410 L1058,325" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1064" y="404" text-anchor="start" font-size="10" fill="#6b7086">거절 → 재작성</text>
+<path d="M1294,325 L1294,450 L1040,450 L1040,325" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1046" y="444" text-anchor="start" font-size="10" fill="#6b7086">불합격 → 반려 사유와 함께 재작성</text>
+<rect x="424" y="634" width="330" height="72" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="589.0" y="658.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">agent/mcp_client.py</text>
+<text x="589.0" y="674.2" text-anchor="middle" font-size="11" fill="#6b7086">MCP 다중 세션 (stdio subprocess)</text>
+<text x="589.0" y="690.2" text-anchor="middle" font-size="11" fill="#6b7086">find_prompt / find_resource_template로 서버 탐색</text>
+<path d="M504,380 L504,634" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="510" y="600" text-anchor="start" font-size="10" fill="#6b7086">Tool · Resource · Prompt</text>
+<rect x="424" y="760" width="160" height="80" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="504.0" y="781.4" text-anchor="middle" font-size="11" fill="#1d2030" font-weight="600">mcp_server.py (ops)</text>
+<text x="504.0" y="796.4" text-anchor="middle" font-size="10" fill="#6b7086">Tool: get_monitoring_status</text>
+<text x="504.0" y="811.4" text-anchor="middle" font-size="10" fill="#6b7086">Tool: get_recent_logs</text>
+<text x="504.0" y="826.4" text-anchor="middle" font-size="10" fill="#6b7086">runbook:// Resource · Prompt</text>
+<rect x="594" y="760" width="160" height="80" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="674.0" y="781.4" text-anchor="middle" font-size="11" fill="#1d2030" font-weight="600">mcp_server_docs.py (docs)</text>
+<text x="674.0" y="796.4" text-anchor="middle" font-size="10" fill="#6b7086">Resource:</text>
+<text x="674.0" y="811.4" text-anchor="middle" font-size="10" fill="#6b7086">docs://api-reference/…</text>
+<text x="674.0" y="826.4" text-anchor="middle" font-size="10" fill="#6b7086">(decoy — 서버 탐색용)</text>
+<path d="M504,706 L504,760" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M674,706 L674,760" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="772" y="640" width="218" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="881.0" y="666.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">agent/rag.py — runbook 벡터 인덱스</text>
+<text x="881.0" y="682.2" text-anchor="middle" font-size="11" fill="#6b7086">InMemoryVectorStore + 임베딩 · 어휘 재정렬</text>
+<path d="M850,325 L850,640" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="856" y="600" text-anchor="start" font-size="10" fill="#6b7086">incident_type 검색</text>
+<rect x="1008" y="640" width="218" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="1117.0" y="666.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">data/</text>
+<text x="1117.0" y="682.2" text-anchor="middle" font-size="11" fill="#6b7086">monitoring.json · logs.json · runbooks/*.md</text>
+<text x="1117" y="722" text-anchor="middle" font-size="10" fill="#6b7086">ops 서버와 RAG 인덱스가 읽는 데이터</text>
+<rect x="1244" y="640" width="276" height="60" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="1382.0" y="666.2" text-anchor="middle" font-size="12" fill="#1d2030" font-weight="600">LangSmith</text>
+<text x="1382.0" y="682.2" text-anchor="middle" font-size="11" fill="#6b7086">요청당 chat_request 루트 아래 노드·LLM·MCP 계층 trace</text>
+<path d="M1382,560 L1382,640" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="1244" y="760" width="276" height="70" rx="8" fill="#eef1f8" stroke="#3b3f52" stroke-width="1.4"/>
+<text x="1382.0" y="783.9" text-anchor="middle" font-size="11" fill="#1d2030" font-weight="600">LLM 백엔드 (LLM_BACKEND)</text>
+<text x="1382.0" y="798.9" text-anchor="middle" font-size="10" fill="#6b7086">fake 스텁 · ollama qwen3 0.6b/8b · openai gpt-4o</text>
+<text x="1382.0" y="813.9" text-anchor="middle" font-size="10" fill="#6b7086">fast(분류·계획) / quality(작성·대화·요약)</text>
+<path d="M1520,795 L1540,795 L1540,420 L1520,420" fill="none" stroke="#3b3f52" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1520" y="752" text-anchor="end" font-size="10" fill="#6b7086">그래프 노드가 route · plan · write · chat 호출</text>
+</svg>

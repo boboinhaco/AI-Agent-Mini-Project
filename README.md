@@ -40,34 +40,11 @@ LLM 자리는 `fake`(결정론 스텁) / `ollama`(로컬 qwen3) / `openai`(gpt-4
 
 ## 2. 아키텍처
 
-```mermaid
-flowchart TB
-    Browser["브라우저 (web_chat.html, Vue 3)"] -->|same-origin| Proxy["web_demo_server.py (:8600)"]
-    Proxy --> API["server.py — FastAPI (:8100)<br/>/chat · /chat/stream · /chat/approve · /session"]
-    API --> Graph
+![아키텍처](doc/images/architecture.svg)
 
-    subgraph Graph["agent/graph.py — LangGraph (SUPERVISOR_VERSION=v2)"]
-        route -.->|chat| chat_answer
-        route -.->|incident| plan --> gate --> research
-        subgraph research["research 서브그래프 (멀티 에이전트)"]
-            dispatch --> metrics_agent & log_agent & runbook_agent --> merge
-        end
-        research --> replan_check
-        replan_check -.->|"부족 → RAG로 runbook 선택"| research
-        replan_check -.->|충분| analysis --> write --> approval
-        approval -.->|"승인 / 위험 조치 없음"| validate
-        approval -.->|"거절 (interrupt → resume)"| write
-        validate -.->|불합격| write
-        validate -.->|합격| finalize
-    end
-
-    research --> MCP["agent/mcp_client.py — MCP 다중 세션 (stdio)"]
-    MCP --> Ops["mcp_server.py (ops)<br/>Tool: get_monitoring_status · get_recent_logs<br/>Resource: runbook://… · Prompt: incident_analysis_prompt"]
-    MCP --> Docs["mcp_server_docs.py (docs, decoy)"]
-    replan_check --> RAG["agent/rag.py — runbook 벡터 인덱스<br/>(InMemoryVectorStore + 임베딩)"]
-    API --> Session["SQLite session.db<br/>messages + summaries(요약 메모리)"]
-    Graph --> LS["LangSmith trace"]
-```
+- 위쪽 행은 요청 경로(브라우저 → 프록시 → FastAPI → SQLite), 가운데 큰 상자는 LangGraph 파이프라인, 아래 행은 그래프가 호출하는 외부 구성요소(MCP 서버들, RAG 인덱스, 데이터, LangSmith, LLM 백엔드)입니다.
+- 점선 상자 `research`는 compiled subgraph로, metrics·log·runbook 에이전트 셋이 같은 단계에서 병렬로 돌고 merge가 정리합니다.
+- 아래로 꺾여 돌아가는 선 세 개가 자기 교정 루프입니다: replan_check → research(누락 시스템·runbook 보충), approval → write(운영자 거절), validate → write(검증 불합격).
 
 핵심 설계 원칙은 "모델의 판단을 그대로 믿지 않고, 코드로 검증 가능한 결정은 코드가 내린다"입니다.
 gate(불필요 task 제거), replan(누락 보완), validate(수치 인용 검사), approval(사람 승인)이 그 방어선입니다.
@@ -135,7 +112,9 @@ curl -s -X POST localhost:8100/chat/approve -H 'Content-Type: application/json' 
 | 6 | 검증이 "30자 이상 + `1)` 포함"만 검사 — 수치를 지어내도 통과 | `agent/graph.py`(before 스냅샷) `validate_node` |
 | 7 | 338줄 `graph.py` 한 파일에 노드 10개, LLM 백엔드 2개에 같은 보정 코드 중복 | `before/env/line_counts.txt` |
 
-개선 전 그래프: ![](before/env/graph_v2.png)
+개선 전 그래프 (가로 배치로 다시 그림, 원본은 `before/env/graph_v2.png`):
+
+![개선 전 그래프](doc/images/graph_before.svg)
 
 ## 5. 무엇을 바꿨나 (수정/개선 + 추가)
 
