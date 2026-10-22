@@ -84,5 +84,5 @@ cat <<EOF
  Ollama 환경 준비 완료: $FAST_MODEL / $QUALITY_MODEL
 ################################################################
 
-이제 ./sh/run_agent_ollma.sh 로 에이전트를 띄워 테스트할 수 있습니다.
+이제 ./sh/run_agent_ollama.sh 로 에이전트를 띄워 테스트할 수 있습니다.
 EOF

@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()   # LANGCHAIN_TRACING_V2 / API_KEY / PROJECT — import보다 먼저
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
 from langgraph.types import Command
 from langsmith import traceable
 from langsmith.run_helpers import get_current_run_tree
@@ -30,7 +30,7 @@ from agent.graph import build_graph
 from agent.mcp_client import MCPClient
 from agent.memory import compact_history
 from agent.rag import RunbookIndex, make_embeddings
-from agent.report import build_report
+from agent.report import build_report, render_incident, render_incident_list
 from agent.session_store import SqliteSessionStore
 from agent.supervisor_v1 import run_v1
 
@@ -124,29 +124,13 @@ async def version():
     return {"supervisor_version": app.state.deps.version}
 
 
-_HTML_CSS = ("body{font-family:-apple-system,'Apple SD Gothic Neo',sans-serif;max-width:860px;margin:32px auto;"
-             "padding:0 16px;color:#1d2030;line-height:1.6}h1{font-size:20px}h2{font-size:16px;margin-top:24px}"
-             "table{border-collapse:collapse;width:100%}th,td{border:1px solid #c9cdd8;padding:6px 10px;text-align:left}"
-             "a{color:#5b5bd6}code{background:#f1f2f7;padding:1px 4px}")
-
-
-def _html_page(title: str, body: str) -> str:
-    from fastapi.responses import HTMLResponse
-    return HTMLResponse(f"<!doctype html><html><head><meta charset='utf-8'><title>{title}</title>"
-                        f"<style>{_HTML_CSS}</style></head><body>{body}</body></html>")
-
-
 @app.get("/incidents")
 async def list_incidents(limit: int = 50, format: str = "json"):
     """저장된 인시던트 리포트 목록 (최신순). format=html 이면 사람이 보는 목록 페이지."""
     items = app.state.deps.session_store.list_incidents(limit)
     if format != "html":
         return {"incidents": items}
-    rows = "".join(f"<tr><td><a href='/incidents/{i['id']}?format=html'>#{i['id']}</a></td><td>{i['created']}</td>"
-                   f"<td>{i['query']}</td><td>{i['incident_type'] or '-'}</td><td>{', '.join(i['systems'])}</td></tr>"
-                   for i in items)
-    return _html_page("지난 인시던트 리포트", f"<h1>지난 인시던트 리포트</h1><table><tr><th>번호</th><th>생성</th>"
-                      f"<th>질문</th><th>장애 유형</th><th>시스템</th></tr>{rows or '<tr><td colspan=5>없음</td></tr>'}</table>")
+    return HTMLResponse(render_incident_list(items))
 
 
 @app.get("/incidents/{incident_id}")
@@ -156,13 +140,9 @@ async def get_incident(incident_id: int, format: str = "json"):
     if not rep:
         raise HTTPException(404, f"incident {incident_id} 없음")
     if format == "md":
-        from fastapi.responses import PlainTextResponse
         return PlainTextResponse(rep["report"], media_type="text/markdown; charset=utf-8")
     if format == "html":
-        import markdown
-        body = markdown.markdown(rep["report"], extensions=["tables"])
-        return _html_page(f"인시던트 리포트 #{incident_id}",
-                          f"<p><a href='/incidents?format=html'>← 지난 리포트 목록</a></p>{body}")
+        return HTMLResponse(render_incident(rep))
     return rep
 
 

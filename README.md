@@ -7,7 +7,7 @@
 
 - 저장소: https://github.com/boboinhaco/AI-Agent-Mini-Project
 - 과제 유형: **1번 — Base AI Agent 기능 개선/추가** (SK AX AI 서비스 개발 Mini-project)
-- 상세 매뉴얼: [doc/README.md](doc/README.md) · [doc/manual_ollma.md](doc/manual_ollma.md) · [doc/manual_openai.md](doc/manual_openai.md)
+- **처음 쓰는 운영자**: [doc/USER_GUIDE.md](doc/USER_GUIDE.md) (1쪽) · 개발자 매뉴얼: [doc/README.md](doc/README.md) · 실행 상세: [doc/manual_ollma.md](doc/manual_ollma.md)
 - Before 기록: [before/README.md](before/README.md) · After 기록: [after/README.md](after/README.md)
 
 ---
@@ -59,7 +59,7 @@ cp .env.example .env          # LangSmith / OpenAI 키 입력 (.env는 커밋되
 # 1) 로컬 실모델 (무료) — qwen3:0.6b / qwen3:8b + 임베딩 nomic-embed-text
 bash sh/setup_ollama.sh
 ollama pull nomic-embed-text
-bash sh/run_agent_ollma.sh    # 백엔드 :8100
+bash sh/run_agent_ollama.sh    # 백엔드 :8100
 
 # 2) 브라우저 채팅 (새 터미널)
 bash sh/run_frontend.sh       # http://localhost:8600
@@ -183,28 +183,32 @@ fake 수치는 라우터·검증기가 같은 코드를 쓰는 동어반복 지�
 
 ```
 .
-├── server.py                 FastAPI 백엔드 (/chat, /chat/stream, /chat/approve, /session)
+├── server.py                 FastAPI 백엔드 (/chat, /chat/stream, /chat/approve, /session, /incidents)
 ├── web_demo_server.py        브라우저용 프록시 (:8600 → :8100)
-├── web_chat.html             Vue 3 채팅 UI (승인 카드·서브에이전트 진행 표시)
+├── web_chat.html             Vue 3 채팅 UI (승인 카드·진행 단계·리포트 링크)
 ├── mcp_server.py             MCP ops 서버: 모니터링·로그 Tool, runbook Resource, 진단 Prompt
 ├── mcp_server_docs.py        MCP docs 서버 (decoy — 서버 탐색 패턴용)
 ├── agent/
 │   ├── graph.py              LangGraph 조립 (엣지·체크포인터)
-│   ├── state.py              AgentState, KNOWN_SYSTEMS, 라우팅 패턴
-│   ├── nodes/                route · plan/gate · research · replan · analysis · write · approval · validate
-│   ├── subgraphs/research.py metrics/log/runbook 서브에이전트
-│   ├── rag.py                runbook 벡터 인덱스 + 임베딩 백엔드
+│   ├── state.py              AgentState, 시스템 목록·별칭, 라우팅 판단, 선별 규칙
+│   ├── prompts.py            모든 LLM 프롬프트와 입력 렌더링 (백엔드 공용)
+│   ├── plan_utils.py         계획 정규화 (백엔드 공용)
+│   ├── nodes/                route · plan/gate · replan · analysis · write · validate/finalize · approval
+│   ├── subgraphs/research.py metrics/log/runbook 서브에이전트 (compiled subgraph)
+│   ├── rag.py                runbook 벡터 인덱스 + 임베딩 백엔드 + 어휘 재정렬
 │   ├── memory.py             대화 요약 압축
-│   ├── session_store.py      SQLite messages + summaries
+│   ├── report.py             인시던트 리포트 생성·HTML 렌더링
+│   ├── session_store.py      SQLite messages · summaries · incidents
 │   ├── mcp_client.py         MCP 다중 세션 클라이언트 (stdio)
-│   ├── fake_llm.py · ollama_llm.py · openai_llm.py   LLM 백엔드 (동일 인터페이스)
+│   ├── fake_llm.py · ollama_llm.py · openai_llm.py   LLM 백엔드 (호출 방식만 다름)
 │   ├── supervisor_v1.py      legacy 선형 파이프라인 (롤백 지점)
 │   └── retry.py · deps.py    재시도, 의존성 주입
 ├── data/                     monitoring.json · logs.json · runbooks/*.md
-├── eval/                     measure.py(회귀 측정) · screenshot.py(화면 캡처) · memory_check.py
-├── before/  after/           측정 수치·화면·로그·소스 스냅샷
-├── doc/                      상세 매뉴얼, 회귀 쿼리, 개선 내역
-└── sh/                       setup_venv · setup_ollama · run_agent_* · run_frontend
+├── eval/                     measure.py(회귀 측정) · judge.py(LLM 채점) · memory_check.py · screenshot.py
+├── tests/                    pytest 49개 (FakeMCP로 그래프·서버 계층까지)
+├── before/  after/           측정 수치·화면·로그 (수정 전 소스는 git 커밋 4d6c355)
+├── doc/                      USER_GUIDE(운영자) · README(개발자) · REVIEW(검토) · manual_* · images/
+└── sh/                       setup_venv · setup_ollama · run_agent_ollama · run_agent_openai · run_frontend
 ```
 
 ## 8. 측정 방법 (재현)

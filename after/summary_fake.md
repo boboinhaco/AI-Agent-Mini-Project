@@ -1,6 +1,6 @@
 # 측정 요약 — fake
 
-- 코드: git d5776a8 · 측정 2026-10-21 16:14
+- 코드: git ff40a2c · 측정 2026-10-22 10:50
 - 백엔드: fake (fast=fast-model-stub, quality=quality-model-stub)
 - supervisor_version: v2
 - 쿼리 수: 10
@@ -14,15 +14,15 @@
 
 | # | 지연(s) | route | tasks | 검증시도 | cost | 조사 시스템 | runbook | 체크 |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 0.19 | incident | 2 | 2 | 0.000646 | payments-service | cpu-spike | 4/4 |
-| 2 | 0.03 | incident | 2 | 2 | 0.000594 | cache-service | memory-leak | 4/4 |
-| 3 | 0.03 | incident | 2 | 2 | 0.000573 | log-service | disk-full | 4/4 |
+| 1 | 0.15 | incident | 2 | 2 | 0.000646 | payments-service | cpu-spike | 4/4 |
+| 2 | 0.04 | incident | 2 | 2 | 0.000594 | cache-service | memory-leak | 4/4 |
+| 3 | 0.04 | incident | 2 | 2 | 0.000573 | log-service | disk-full | 4/4 |
 | 4 | 0.03 | incident | 3 | 2 | 0.00075 | gateway-service,payments-service | network-timeout | 3/3 |
-| 5 | 0.02 | incident | 3 | 2 | 0.000678 | auth-service,web-01 | high-latency | 3/3 |
-| 6 | 0.03 | incident | 4 | 2 | 0.000835 | cache-service,payments-service | memory-leak | 4/4 |
+| 5 | 0.03 | incident | 3 | 2 | 0.000678 | auth-service,web-01 | high-latency | 3/3 |
+| 6 | 0.04 | incident | 4 | 2 | 0.000835 | cache-service,payments-service | memory-leak | 4/4 |
 | 7 | 0.03 | incident | 2 | 2 | 0.000538 | auth-service | high-latency | 4/4 |
-| 8 | 0.03 | incident | 7 | 2 | 0.000538 | auth-service | high-latency | 5/5 |
-| 9 | 0.0 | chat | 0 | 0 | 1.3e-05 |  |  | 1/1 |
+| 8 | 0.04 | incident | 7 | 2 | 0.000538 | auth-service | high-latency | 5/5 |
+| 9 | 0.01 | chat | 0 | 0 | 1.3e-05 |  |  | 1/1 |
 | 10 | 0.0 | chat | 0 | 0 | 3e-06 |  |  | 2/2 |
 
 ## 답변 전문
@@ -30,76 +30,76 @@
 ### q1: payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요
 
 ```
-📌 payments-service(결제) — 상태 저하(degraded), CPU 93.0%, 메모리 56.0%, 알림 2건
+📌 payments-service(결제) — 상태 저하(degraded), CPU 95.6%, 메모리 57.3%, 알림 2건
 📖 적용 매뉴얼: Runbook: CPU 급증 대응 절차
 
-'payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요' 진단 결과: 1) 모니터링: payments-service 상태=degraded, CPU 93.0% (알림 2건) 2) 표준 절차: 'Runbook: CPU 급증 대응 절차'에 따라 반복 호출, 배치 작업 중복 실행 같은 특정 요청 패턴이 원인인지 최근 로그에서 확인한다. CPU가 90%를 넘고 지속되면 해당 인스턴스를 오토스케일링 그룹에서 한 대 더 띄워 부하를 분산한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
+'payments-service 결제 응답이 느려지고 CPU가 치솟았어요, 원인 확인해주세요' 진단 결과: 1) 모니터링: payments-service 상태=degraded, CPU 95.6% (알림 2건) 2) 표준 절차: 'Runbook: CPU 급증 대응 절차'에 따라 반복 호출, 배치 작업 중복 실행 같은 특정 요청 패턴이 원인인지 최근 로그에서 확인한다. CPU가 90%를 넘고 지속되면 해당 인스턴스를 오토스케일링 그룹에서 한 대 더 띄워 부하를 분산한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
 ```
 
 ### q2: cache-service 메모리 사용률이 계속 올라가고 있어요
 
 ```
-📌 cache-service(캐시) — 상태 저하(degraded), CPU 47.4%, 메모리 91.7%, 알림 2건
+📌 cache-service(캐시) — 상태 저하(degraded), CPU 46.2%, 메모리 91.1%, 알림 2건
 📖 적용 매뉴얼: Runbook: 메모리 누수(Memory Leak) 대응 절차
 
-'cache-service 메모리 사용률이 계속 올라가고 있어요' 진단 결과: 1) 모니터링: cache-service 상태=degraded, CPU 47.4% (알림 2건) 2) 표준 절차: 'Runbook: 메모리 누수(Memory Leak) 대응 절차'에 따라 OOM 직전(90% 이상)이면 해당 프로세스를 즉시 재시작해 서비스 중단을 막는다 — 재시작은 임시 조치일 뿐임을 기록해둔다. 힙 덤프 또는 프로파일링 도구로 어떤 객체가 계속 쌓이는지 확인한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
+'cache-service 메모리 사용률이 계속 올라가고 있어요' 진단 결과: 1) 모니터링: cache-service 상태=degraded, CPU 46.2% (알림 2건) 2) 표준 절차: 'Runbook: 메모리 누수(Memory Leak) 대응 절차'에 따라 OOM 직전(90% 이상)이면 해당 프로세스를 즉시 재시작해 서비스 중단을 막는다 — 재시작은 임시 조치일 뿐임을 기록해둔다. 힙 덤프 또는 프로파일링 도구로 어떤 객체가 계속 쌓이는지 확인한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
 ```
 
 ### q3: log-service 디스크 공간이 부족하다는 알림이 왔어요
 
 ```
-📌 log-service(로그 수집) — 상태 저하(degraded), CPU 19.2%, 메모리 34.6%, 알림 2건
+📌 log-service(로그 수집) — 상태 저하(degraded), CPU 17.4%, 메모리 33.7%, 알림 2건
 📖 적용 매뉴얼: Runbook: 디스크 용량 부족 대응 절차
 
-'log-service 디스크 공간이 부족하다는 알림이 왔어요' 진단 결과: 1) 모니터링: log-service 상태=degraded, CPU 19.2% (알림 2건) 2) 표준 절차: 'Runbook: 디스크 용량 부족 대응 절차'에 따라 로그 파일, 임시 파일, 오래된 백업처럼 안전하게 지울 수 있는 항목부터 정리해 여유 공간을 즉시 확보한다. 특정 프로세스가 비정상적으로 로그를 쌓고 있다면 로그 레벨을 낮추거나 로테이션 주기를 단축한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
+'log-service 디스크 공간이 부족하다는 알림이 왔어요' 진단 결과: 1) 모니터링: log-service 상태=degraded, CPU 17.4% (알림 2건) 2) 표준 절차: 'Runbook: 디스크 용량 부족 대응 절차'에 따라 로그 파일, 임시 파일, 오래된 백업처럼 안전하게 지울 수 있는 항목부터 정리해 여유 공간을 즉시 확보한다. 특정 프로세스가 비정상적으로 로그를 쌓고 있다면 로그 레벨을 낮추거나 로테이션 주기를 단축한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
 ```
 
 ### q4: gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요
 
 ```
-📌 gateway-service(API 게이트웨이) — 상태 저하(degraded), CPU 32.0%, 메모리 46.0%, 알림 2건
-📌 payments-service(결제) — 상태 저하(degraded), CPU 97.6%, 메모리 58.3%, 알림 2건
+📌 gateway-service(API 게이트웨이) — 상태 저하(degraded), CPU 27.4%, 메모리 43.7%, 알림 2건
+📌 payments-service(결제) — 상태 저하(degraded), CPU 99.0%, 메모리 59.0%, 알림 2건
 📖 적용 매뉴얼: Runbook: 네트워크 타임아웃 대응 절차
 
-'gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요' 진단 결과: 1) 모니터링: gateway-service 상태=degraded, CPU 32.0% (알림 2건) · payments-service 상태=degraded, CPU 97.6% (알림 2건) 2) 표준 절차: 'Runbook: 네트워크 타임아웃 대응 절차'에 따라 DNS 해석 실패, 방화벽/보안그룹 변경, 로드밸런서 헬스체크 실패 중 최근 변경 사항이 있었는지 점검한다. 특정 리전/가용영역에서만 발생하면 해당 구간을 우회하는 라우팅으로 임시 전환한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
+'gateway-service에서 payments-service로 가는 요청이 타임아웃 나고 있어요' 진단 결과: 1) 모니터링: gateway-service 상태=degraded, CPU 27.4% (알림 2건) · payments-service 상태=degraded, CPU 99.0% (알림 2건) 2) 표준 절차: 'Runbook: 네트워크 타임아웃 대응 절차'에 따라 DNS 해석 실패, 방화벽/보안그룹 변경, 로드밸런서 헬스체크 실패 중 최근 변경 사항이 있었는지 점검한다. 특정 리전/가용영역에서만 발생하면 해당 구간을 우회하는 라우팅으로 임시 전환한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
 ```
 
 ### q5: web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘
 
 ```
-📌 web-01(웹 서버) — 상태 정상(healthy), CPU 38.1%, 메모리 50.0%
-📌 auth-service(로그인/인증) — 상태 저하(degraded), CPU 76.4%, 메모리 60.2%, 알림 2건
+📌 web-01(웹 서버) — 상태 정상(healthy), CPU 36.2%, 메모리 49.1%
+📌 auth-service(로그인/인증) — 상태 저하(degraded), CPU 79.5%, 메모리 61.8%, 알림 2건
 📖 적용 매뉴얼: Runbook: 응답 지연(High Latency) 대응 절차
 
-'web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘' 진단 결과: 1) 모니터링: web-01 상태=healthy, CPU 38.1% (알림 0건) · auth-service 상태=degraded, CPU 76.4% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
+'web-01 CPU 급증, auth-service 커넥션 풀도 같이 확인해줘' 진단 결과: 1) 모니터링: web-01 상태=healthy, CPU 36.2% (알림 0건) · auth-service 상태=degraded, CPU 79.5% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
 ```
 
 ### q6: payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘
 
 ```
-📌 payments-service(결제) — 상태 저하(degraded), CPU 91.3%, 메모리 55.2%, 알림 2건
-📌 cache-service(캐시) — 상태 저하(degraded), CPU 43.4%, 메모리 89.7%, 알림 2건
+📌 payments-service(결제) — 상태 저하(degraded), CPU 95.7%, 메모리 57.3%, 알림 2건
+📌 cache-service(캐시) — 상태 저하(degraded), CPU 48.3%, 메모리 92.2%, 알림 2건
 📖 적용 매뉴얼: Runbook: 메모리 누수(Memory Leak) 대응 절차
 
-'payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘' 진단 결과: 1) 모니터링: payments-service 상태=degraded, CPU 91.3% (알림 2건) · cache-service 상태=degraded, CPU 43.4% (알림 2건) 2) 표준 절차: 'Runbook: 메모리 누수(Memory Leak) 대응 절차'에 따라 OOM 직전(90% 이상)이면 해당 프로세스를 즉시 재시작해 서비스 중단을 막는다 — 재시작은 임시 조치일 뿐임을 기록해둔다. 힙 덤프 또는 프로파일링 도구로 어떤 객체가 계속 쌓이는지 확인한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
+'payments-service랑 cache-service 둘 다 저하됐는데 공통 원인이 있는지 분석해줘' 진단 결과: 1) 모니터링: payments-service 상태=degraded, CPU 95.7% (알림 2건) · cache-service 상태=degraded, CPU 48.3% (알림 2건) 2) 표준 절차: 'Runbook: 메모리 누수(Memory Leak) 대응 절차'에 따라 OOM 직전(90% 이상)이면 해당 프로세스를 즉시 재시작해 서비스 중단을 막는다 — 재시작은 임시 조치일 뿐임을 기록해둔다. 힙 덤프 또는 프로파일링 도구로 어떤 객체가 계속 쌓이는지 확인한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
 ```
 
 ### q7: 로그인 응답이 느려요, 원인 확인해주세요
 
 ```
-📌 auth-service(로그인/인증) — 상태 저하(degraded), CPU 76.4%, 메모리 60.2%, 알림 2건
+📌 auth-service(로그인/인증) — 상태 저하(degraded), CPU 75.7%, 메모리 59.9%, 알림 2건
 📖 적용 매뉴얼: Runbook: 응답 지연(High Latency) 대응 절차
 
-'로그인 응답이 느려요, 원인 확인해주세요' 진단 결과: 1) 모니터링: auth-service 상태=degraded, CPU 76.4% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
+'로그인 응답이 느려요, 원인 확인해주세요' 진단 결과: 1) 모니터링: auth-service 상태=degraded, CPU 75.7% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
 ```
 
 ### q8: billing-service 응답이 느려요
 
 ```
-📌 auth-service(로그인/인증) — 상태 저하(degraded), CPU 76.3%, 메모리 60.1%, 알림 2건
+📌 auth-service(로그인/인증) — 상태 저하(degraded), CPU 80.5%, 메모리 62.2%, 알림 2건
 📖 적용 매뉴얼: Runbook: 응답 지연(High Latency) 대응 절차
 
-'billing-service 응답이 느려요' 진단 결과: 1) 모니터링: auth-service 상태=degraded, CPU 76.3% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
+'billing-service 응답이 느려요' 진단 결과: 1) 모니터링: auth-service 상태=degraded, CPU 80.5% (알림 2건) 2) 표준 절차: 'Runbook: 응답 지연(High Latency) 대응 절차'에 따라 커넥션 풀 사용률이 90%를 넘으면 풀 크기를 늘리거나 느린 쿼리/외부 호출에 타임아웃을 건다. 지연이 특정 리전/인스턴스에 몰려 있으면 해당 인스턴스를 로드밸런서에서 일시 제외한다. 3) 정상화 확인 후 원인 분석과 재발 방지 대책을 문서화하세요.
 ```
 
 ### q9: 안녕, 너는 누구야?

@@ -1,14 +1,8 @@
-"""LLM_BACKEND=ollama — 로컬 Ollama 실모델 백엔드 (fake_llm과 동일 인터페이스).
+"""LLM_BACKEND=ollama — 로컬 Ollama 백엔드 (fake_llm/openai_llm과 동일 인터페이스).
 
-Wave 10a 구도를 실물로: fast(기본 qwen3:0.6b)는 분류·계획·단순 대화, quality(기본
-qwen3:8b)는 최종 답변 작성 전담. Ollama의 구조화 출력(format=<JSON Schema>)과
-temperature=0으로 변동을 줄이지만 실모델이므로 결정론은 아니다 — 그래서 gate(W6)·
-replan(W7)·validator(W8)가 연출이 아니라 실제 방어선으로 동작한다.
-fc
-비용(cost_usd)은 '가상 단가 × 실측 토큰 수(prompt_eval_count+eval_count)'다 — 로컬
-추론이라 실제 과금은 0이지만, W10a의 모델 분리 효과를 같은 잣대로 비교하기 위함이다.
-
-사전 조건: `ollama serve` 실행 중 + `ollama pull qwen3:0.6b qwen3:8b`.
+fast(기본 qwen3:0.6b)는 분류·계획·분석, quality(기본 qwen3:8b)는 답변 작성·대화·요약 전담.
+프롬프트는 agent/prompts.py 한 곳에만 있고, 여기는 "Ollama를 어떻게 호출하나"(JSON 스키마 강제,
+스트리밍, 타임아웃 폴백)만 담당한다. 비용(cost_usd)은 가상 단가 × 실측 토큰 수다.
 """
 import json
 import os
@@ -16,47 +10,26 @@ import os
 import httpx
 from langsmith import traceable
 
+from . import prompts
 from .plan_utils import normalize_plan
-from .state import KNOWN_SYSTEMS, SYSTEM_LABELS, is_incident_query
-
-SYSTEM_LIST = ", ".join(f"{n}({SYSTEM_LABELS.get(n, '')})" for n in sorted(KNOWN_SYSTEMS))
+from .state import is_incident_query
 
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
-# 분류/계획용 소형 모델 호출 상한. Before: 300s 동기 호출이 이벤트 루프를 막아 /health까지 멈춤.
-FAST_TIMEOUT = float(os.environ.get("OLLAMA_FAST_TIMEOUT", "90"))
-STREAM_TIMEOUT = float(os.environ.get("OLLAMA_STREAM_TIMEOUT", "300"))
+FAST_TIMEOUT = float(os.environ.get("OLLAMA_FAST_TIMEOUT", "90"))      # 분류·계획·분석·요약
+STREAM_TIMEOUT = float(os.environ.get("OLLAMA_STREAM_TIMEOUT", "300"))  # 답변 작성·대화(스트리밍)
 
-
-
-
-ROUTE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "route": {"type": "string", "enum": ["chat", "incident"]},
-        "needs_analysis": {"type": "boolean"},
-    },
-    "required": ["route", "needs_analysis"],
-}
-
-PLAN_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "needs_analysis": {"type": "boolean"},
-        "tasks": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "agent": {"type": "string",
-                              "enum": ["research", "analysis"]},
-                    "target": {"type": "string"},
-                },
-                "required": ["agent"],
-            },
-        },
-    },
-    "required": ["needs_analysis", "tasks"],
-}
+ROUTE_SCHEMA = {"type": "object",
+                "properties": {"route": {"type": "string", "enum": ["chat", "incident"]},
+                               "needs_analysis": {"type": "boolean"}},
+                "required": ["route", "needs_analysis"]}
+PLAN_SCHEMA = {"type": "object",
+               "properties": {"needs_analysis": {"type": "boolean"},
+                              "tasks": {"type": "array", "items": {
+                                  "type": "object",
+                                  "properties": {"agent": {"type": "string", "enum": ["research", "analysis"]},
+                                                 "target": {"type": "string"}},
+                                  "required": ["agent"]}}},
+               "required": ["needs_analysis", "tasks"]}
 
 
 class OllamaLLM:
@@ -65,40 +38,30 @@ class OllamaLLM:
         self.model = model
         self.usd_per_1k = usd_per_1k_tokens
 
+    def _usage(self, tokens: int, **extra) -> dict:
+        return {"model": self.name, "tokens": tokens,
+                "usd": round(tokens / 1000 * self.usd_per_1k, 6), **extra}
+
     async def _chat(self, system: str, user: str, schema: dict | None = None) -> tuple[str, dict]:
-        payload = {
-            "model": self.model,
-            "messages": [{"role": "system", "content": system},
-                         {"role": "user", "content": user}],
-            "stream": False,
-            "options": {"temperature": 0.0},
-        }
+        """비스트리밍 호출 — JSON 스키마 출력(route/plan/analyze/summarize)용."""
+        payload = {"model": self.model, "stream": False, "options": {"temperature": 0.0},
+                   "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
         if schema is not None:
             payload["format"] = schema
-        async with httpx.AsyncClient(timeout=FAST_TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=FAST_TIMEOUT) as client:   # 비동기 — 이벤트 루프를 막지 않는다
             resp = await client.post(OLLAMA_URL, json=payload)
         resp.raise_for_status()
         data = resp.json()
-        content = data["message"]["content"]
         tokens = (data.get("prompt_eval_count") or 0) + (data.get("eval_count") or 0)
-        usage = {"model": self.name, "tokens": tokens,
-                 "usd": round(tokens / 1000 * self.usd_per_1k, 6)}
-        return content, usage
+        return data["message"]["content"], self._usage(tokens)
 
     async def _chat_stream(self, system: str, user: str, on_token=None) -> tuple[str, dict]:
-        """사용자 대면 텍스트(최종 답변류) 전용 — Ollama NDJSON 스트림을 토큰 단위로
-        받아 on_token(조각)을 즉시 호출해 SSE로 실시간 중계할 수 있게 한다. 분류/계획
-        등 JSON 스키마 출력(route/plan/analyze)은 부분 출력이 의미가 없어 그대로 _chat을
-        쓴다."""
-        payload = {
-            "model": self.model,
-            "messages": [{"role": "system", "content": system},
-                         {"role": "user", "content": user}],
-            "stream": True,
-            "options": {"temperature": 0.0},
-        }
+        """사용자 대면 텍스트(답변·대화) 전용 — 토큰을 on_token으로 즉시 흘려보낸다.
+        타임아웃이면 예외로 스트림을 죽이지 않고, 받은 조각 + 안내문으로 마무리한다."""
+        payload = {"model": self.model, "stream": True, "options": {"temperature": 0.0},
+                   "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
         chunks: list[str] = []
-        usage = {"model": self.name, "tokens": 0, "usd": 0.0}
+        usage = self._usage(0)
         try:
             async with httpx.AsyncClient(timeout=STREAM_TIMEOUT) as client:
                 async with client.stream("POST", OLLAMA_URL, json=payload) as resp:
@@ -113,12 +76,8 @@ class OllamaLLM:
                             if on_token is not None:
                                 on_token(piece)
                         if data.get("done"):
-                            tokens = ((data.get("prompt_eval_count") or 0)
-                                      + (data.get("eval_count") or 0))
-                            usage = {"model": self.name, "tokens": tokens,
-                                     "usd": round(tokens / 1000 * self.usd_per_1k, 6)}
+                            usage = self._usage((data.get("prompt_eval_count") or 0) + (data.get("eval_count") or 0))
         except httpx.HTTPError as e:
-            # 모델 무응답/타임아웃 — 예외로 스트림을 죽이지 않고, 받은 조각 + 안내문으로 마무리한다 (리뷰 A3)
             usage["fallback"] = type(e).__name__
             note = ("\n\n[모델 응답이 제한 시간 안에 끝나지 않아 여기까지만 전달합니다. "
                     "잠시 후 같은 질문을 다시 보내 주세요.]")
@@ -128,134 +87,57 @@ class OllamaLLM:
         usage["prompt"] = f"[SYSTEM]\n{system}\n\n[USER]\n{user}"
         return "".join(chunks), usage
 
+    # ── 두 모델이 공유하는 능력 ──
     @traceable(run_type="llm", name="ollama.summarize")
     async def summarize(self, previous: str, messages: list[dict]) -> tuple[str, dict]:
-        system = ("당신은 대화 기록 요약기다. 이전 요약과 새 대화를 합쳐 아래 형식으로만 한국어로 답하라. "
-                  "사용자가 밝힌 이름은 반드시 그대로 보존하라.\n"
-                  "사용자 이름: <이름 또는 미상>\n"
-                  "주요 사실: <쉼표로 구분한 핵심 사실 3개 이내>\n"
-                  "진행 중인 요청: <있으면 한 줄, 없으면 없음>")
-        rendered = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
-        user = f"## 이전 요약\n{previous or '(없음)'}\n\n## 새 대화\n{rendered}"
         try:
-            return await self._chat(system, user)
+            return await self._chat(prompts.SUMMARIZE, prompts.summarize_user(previous, messages))
         except httpx.HTTPError as e:   # 요약 실패는 치명적이지 않다 — 추출 요약으로 대체
             fallback = (previous + " / " if previous else "") + " / ".join(
                 m["content"][:40] for m in messages if m["role"] == "user")
-            return fallback, {"model": self.name, "tokens": 0, "usd": 0.0, "fallback": type(e).__name__}
+            return fallback, self._usage(0, fallback=type(e).__name__)
 
     @traceable(run_type="llm", name="ollama.chat")
     async def chat(self, query: str, history: list[dict], on_token=None) -> tuple[str, dict]:
-        system = ("당신은 '운영 인시던트 대응 에이전트'다. 운영 중 장애·성능 저하·알림 같은 문제를 말하면 "
-                  "모니터링 지표·최근 로그·대응 매뉴얼을 조회해 원인과 해결 방안을 안내하는 것이 역할이다. "
-                  f"지금 확인할 수 있는 시스템: {SYSTEM_LIST}. "
-                  "자기소개나 '무엇을 할 수 있냐/뭘 물어보면 되냐'는 질문에는 이 역할과 위 시스템 목록을 알려주고, "
-                  "'예: payments-service 결제가 느려요 / 디스크 부족 알람이 왔어요'처럼 질문 예시를 2개 들어라. "
-                  "문제를 말했는데 어느 시스템인지 모호하면 위 목록 중 어느 것인지 되물어라. "
-                  "그 외 가벼운 대화는 한국어 한두 문장으로 간결히 답하라. 대화 이력(요약 포함)에서 사용자가 "
-                  "밝힌 이름이 있으면 정확히 기억해 답하라. '내가 질문 몇 개 했어' 같은 대화 이력에 관한 "
-                  "질문은 아래 대화 이력의 user 메시지를 직접 세어 숫자로 답하라. 이전 장애 보고를 반복하지 마라.")
-        rendered = "\n".join(f"{m['role']}: {m['content']}" for m in history[-10:])
-        user = (f"## 지금까지의 대화\n{rendered or '(없음)'}\n\n"
-                f"## 사용자의 새 메시지\n{query}")
-        return await self._chat_stream(system, user, on_token=on_token)
+        return await self._chat_stream(prompts.CHAT, prompts.chat_user(query, history), on_token=on_token)
 
 
 class OllamaFastLLM(OllamaLLM):
-    """분류·계획·단순 대화 전담 (저사양 소형 모델)."""
+    """분류·계획·분석 (소형 모델). 형식 붕괴·타임아웃은 코드 레벨 폴백으로 복구한다."""
 
     @traceable(run_type="llm", name="ollama_fast.route")
     async def route(self, query: str) -> tuple[dict, dict]:
-        system = ("당신은 ICT 운영 지원 라우터다. 사용자 요청을 분류하라. "
-                  "장애·성능 저하·지연·진단·모니터링·티켓 등 운영 이슈면 route=incident, "
-                  "인사·잡담·일반 질문이면 route=chat. "
-                  "needs_analysis는 패턴 비교/통계 분석이 꼭 필요할 때만 true.")
         try:
-            content, usage = await self._chat(system, query, schema=ROUTE_SCHEMA)
+            content, usage = await self._chat(prompts.ROUTE, query, schema=ROUTE_SCHEMA)
             raw = json.loads(content)
-            route = raw.get("route") if raw.get("route") in ("chat", "incident") else None
-            result = {"route": route or "chat",
-                      "needs_analysis": bool(raw.get("needs_analysis", False))}
+            route = raw.get("route") if raw.get("route") in ("chat", "incident") else "chat"
+            return {"route": route, "needs_analysis": bool(raw.get("needs_analysis", False))}, usage
         except (json.JSONDecodeError, AttributeError, httpx.HTTPError) as e:
-            # 소형 모델의 형식 붕괴·타임아웃 대비 — 코드 레벨 fallback (W6 정신)
-            usage = {"model": self.name, "tokens": 0, "usd": 0.0, "fallback": type(e).__name__}
-            result = {"route": "incident" if is_incident_query(query) else "chat",
-                      "needs_analysis": False}
-        return result, usage
+            return ({"route": "incident" if is_incident_query(query) else "chat", "needs_analysis": False},
+                    self._usage(0, fallback=type(e).__name__))
 
     @traceable(run_type="llm", name="ollama_fast.plan")
     async def plan(self, query: str, procedure_prompt: str) -> tuple[dict, dict]:
-        system = ("당신은 ICT 운영 Supervisor의 planning 노드다. 표준 진단 절차에 따라 "
-                  "실행 계획(tasks)을 JSON으로 세워라. "
-                  "사용자 요청에 등장한 시스템마다 agent=research task를 하나씩 세워라 "
-                  f"(알려진 시스템: {', '.join(sorted(KNOWN_SYSTEMS))} — 특정 시스템이 "
-                  "언급되지 않았으면 auth-service를 기본으로 조사하라). "
-                  "패턴 분석이 꼭 필요하다고 판단되면 agent=analysis task를 추가해도 된다.")
-        user = f"## 표준 절차\n{procedure_prompt}\n\n## 사용자 요청\n{query}"
         try:
-            content, usage = await self._chat(system, user, schema=PLAN_SCHEMA)
-        except httpx.HTTPError as e:
-            # Before 실측: "billing-service 응답이 느려요"에서 0.6b 모델이 300초 무응답 → 서버 500.
-            # 타임아웃이면 모델 없이 코드 레벨 계획(쿼리의 시스템명)으로 복구한다.
-            content = "{}"
-            usage = {"model": self.name, "tokens": 0, "usd": 0.0, "fallback": type(e).__name__}
-
+            content, usage = await self._chat(prompts.PLAN, prompts.plan_user(query, procedure_prompt),
+                                              schema=PLAN_SCHEMA)
+        except httpx.HTTPError as e:   # 소형 모델 무응답 → 코드 레벨 계획으로 복구 (Before 500 오류 지점)
+            content, usage = "{}", self._usage(0, fallback=type(e).__name__)
         return normalize_plan(content, query), usage
 
     @traceable(run_type="llm", name="ollama_fast.analyze")
     async def analyze(self, collected: list[dict]) -> tuple[str, dict]:
-        system = ("당신은 ICT 운영 패턴 분석가다. 여러 시스템의 모니터링 결과를 비교해 "
-                  "공통 원인이 의심되는 패턴이 있는지 한두 문장으로 짧게 답하라. "
-                  "패턴이 없으면 '특이 패턴 없음'이라고만 답하라.")
-        mon = [c["data"] for c in collected if c["source"] == "monitoring"]
-        facts = "\n".join(
-            f"- {d['system_name']}: 상태={d['status']}, CPU {d['cpu_percent']}%, "
-            f"알림 {d['alerts']}" for d in mon) or "(모니터링 데이터 없음)"
         try:
-            return await self._chat(system, facts)
-        except httpx.HTTPError as e:   # 타임아웃 등 — 코드 레벨 비교로 대체 (fake_llm.analyze와 동일 규칙)
-            degraded = [d["system_name"] for d in mon if d.get("status") != "healthy"]
-            if len(degraded) >= 2:
-                text = f"{', '.join(degraded)} 복수 시스템이 동시에 저하됨 — 공유 의존성 등 공통 원인이 의심됨"
-            elif degraded:
-                text = f"{degraded[0]}만 단독 저하 — 연관 시스템은 정상, 국소 이슈로 추정"
-            else:
-                text = "특이 패턴 없음"
-            return text, {"model": self.name, "tokens": 0, "usd": 0.0, "fallback": type(e).__name__}
-
-
+            return await self._chat(prompts.ANALYZE, prompts.analyze_user(collected))
+        except httpx.HTTPError as e:
+            return prompts.fallback_analysis(collected), self._usage(0, fallback=type(e).__name__)
 
 
 class OllamaQualityLLM(OllamaLLM):
-    """최종 답변 작성 전담 (상대적으로 큰 모델)."""
+    """최종 답변 작성 (상대적으로 큰 모델) — 대화·요약도 base 클래스 메서드로 담당."""
 
     @traceable(run_type="llm", name="ollama_quality.write")
     async def write(self, query: str, collected: list[dict], attempt: int,
-              feedback: str | None, on_token=None) -> tuple[str, dict]:
-        system = ("당신은 ICT 운영 보고 작성자다. 수집된 사실만 사용해 한국어로 간결한 대응 보고를 작성하라. "
-                  "반드시 아래 다섯 항목을 '1) 2) 3) 4) 5)' 번호로 쓰고 하위 목록은 만들지 마라(항목당 1~2문장). "
-                  "1) 상태: 어느 시스템이 어떤 상태인지, 핵심 수치와 기준치(예: 메모리 89% — 기준 80%) "
-                  "2) 원인 추정: 로그·알림에서 보이는 단서 "
-                  "3) 지금 할 일(운영자): 당장 확인·조치할 것 "
-                  "4) 담당팀에 요청: 개발/인프라팀에 넘길 것 "
-                  "5) 근거: 인용한 수치·로그 한 줄. "
-                  "영문 용어(p95, heap, OOM, TTL 등)는 괄호로 쉬운 한글 설명을 붙이고, 수치는 수집된 값을 그대로 인용하라. "
-                  "시스템 이름(예: auth-service)을 반드시 1)에 적어라.")
-        facts = []
-        for c in collected:
-            if c["source"] == "monitoring":
-                d = c["data"]
-                facts.append(f"- 모니터링 {d['system_name']}: 상태={d['status']}, "
-                             f"CPU {d['cpu_percent']}%, 메모리 {d['memory_percent']}%, "
-                             f"알림 {len(d['alerts'])}건 {d['alerts']}")
-            elif c["source"] == "logs":
-                d = c["data"]
-                facts.append(f"- 최근 로그 {d['system_name']}:\n  " + "\n  ".join(d.get("lines", [])))
-            elif c["source"] == "runbook":
-                facts.append(f"- runbook 발췌:\n{c['data'].strip()}")
-            elif c["source"] == "analysis":
-                facts.append(f"- 패턴 분석: {c['data'].strip()}")
-        user = f"## 사용자 요청\n{query}\n\n## 수집된 사실\n" + "\n".join(facts)
-        if feedback:
-            user += f"\n\n## 이전 초안에 대한 검증 반려 사유 (반드시 반영)\n{feedback}"
-        return await self._chat_stream(system, user, on_token=on_token)
+                    feedback: str | None, on_token=None) -> tuple[str, dict]:
+        return await self._chat_stream(prompts.WRITE, prompts.write_user(query, collected, feedback),
+                                       on_token=on_token)

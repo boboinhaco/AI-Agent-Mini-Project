@@ -8,6 +8,7 @@ import re
 
 from langsmith import traceable
 
+from .prompts import fallback_analysis
 from .state import DEFAULT_SYSTEM, is_incident_query, target_systems
 
 
@@ -91,16 +92,8 @@ class FastLLM(FakeLLM):
 
     @traceable(run_type="llm", name="fast_llm.analyze")
     async def analyze(self, collected: list[dict]) -> tuple[str, dict]:
-        """Wave 6 보완 — 여러 시스템의 monitoring 결과 사이에 공통 패턴이 있는지 비교."""
-        mon = [c["data"] for c in collected if c["source"] == "monitoring"]
-        degraded = [d["system_name"] for d in mon if d.get("status") != "healthy"]
-        if len(degraded) >= 2:
-            summary = (f"{', '.join(degraded)} 복수 시스템이 동시에 저하됨 — "
-                       f"공유 의존성 등 공통 원인이 의심됨")
-        elif degraded:
-            summary = f"{degraded[0]}만 단독 저하 — 연관 시스템은 정상, 국소 이슈로 추정"
-        else:
-            summary = "모니터링된 시스템 모두 healthy — 패턴상 이상 징후 없음"
+        """여러 시스템의 monitoring 결과 비교 — 실모델 폴백과 같은 규칙(prompts.fallback_analysis)."""
+        summary = fallback_analysis(collected)
         return summary, self._usage(str(collected), summary)
 
     @traceable(run_type="llm", name="fast_llm.chat")

@@ -62,7 +62,6 @@
 | ollama 조사 시스템 (q4 / q5 / q6) | gateway / web-01 / payments 하나씩 | gateway+payments / auth+web-01 / cache+payments |
 | ollama 총 지연 · cost | 575s · 0.084 | 657s · 0.094 (조사 대상 증가분) |
 | LLM-as-judge (ollama, 8건 × 3점) | — | 21 / 24 (q5 채점 타임아웃, 나머지 7건 만점) |
-| LLM-as-judge (fake, 규칙) | — | 24 / 24 |
 | pytest | — | 32 passed |
 | 인시던트 리포트 | — | 장애 쿼리마다 1건 저장 (`/incidents`) |
 
@@ -78,7 +77,7 @@
 ## 수집된 사실 / ## 진단 및 권장 조치
 ```
 
-추가 파일: `judge_{fake,ollama}.{md,json}`, `screens/fake_uc6_done_marks_report.png`
+추가 파일: `judge_ollama.{md,json}` (fake 채점은 validate 규칙과 같아 의미가 없어 제거), `screens/fake_uc6_done_marks_report.png`
 
 ---
 

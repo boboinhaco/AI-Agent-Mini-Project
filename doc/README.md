@@ -21,7 +21,7 @@ bash sh/setup_venv.sh
 |---|---|---|---|
 | Python 가상환경 준비 | `bash sh/setup_venv.sh` | 없음 | `.venv` 생성 + `requirements.txt` 설치(최초 1회, 이미 있으면 설치만 재확인) |
 | 로컬 Ollama 환경 준비 | `bash sh/setup_ollama.sh` | 없음(로컬 추론) | 모델(`qwen3:0.6b`/`8b`)이 이미 있으면 재사용, 없으면 새로 pull — `OLLAMA_FORCE_REFRESH=1`을 주면 지우고 재구성 |
-| 에이전트만 기동 (로컬) | `bash sh/run_agent_ollma.sh` | 없음 | 서버만 띄워두고 직접 curl/웹으로 테스트 |
+| 에이전트만 기동 (로컬) | `bash sh/run_agent_ollama.sh` | 없음 | 서버만 띄워두고 직접 curl/웹으로 테스트 |
 | 에이전트만 기동 (OpenAI) | `bash sh/run_agent_openai.sh` | **과금** | 위와 동일하되 실제 API 사용 (y/N 확인) |
 | 브라우저 채팅 화면 | `bash sh/run_frontend.sh` (서버 기동 후) | 백엔드에 따름 | `http://localhost:8600`에서 실제 채팅 UI로 사용 |
 
@@ -184,18 +184,18 @@ all_total_vue/
 ├── sh/                        # 실행 스크립트 모음 (학생 배포용 — 내부 회귀 테스트 스크립트는 제외)
 │   ├── setup_venv.sh            # .venv 생성 + requirements.txt 설치 (맨 처음 1회)
 │   ├── setup_ollama.sh          # 로컬 Ollama 모델 준비 — 있으면 재사용, 없으면 pull (리셋은 OLLAMA_FORCE_REFRESH=1)
-│   ├── run_agent_ollma.sh       # 에이전트만 기동 — 로컬 실모델
+│   ├── run_agent_ollama.sh       # 에이전트만 기동 — 로컬 실모델
 │   ├── run_agent_openai.sh      # 에이전트만 기동 — OpenAI API (과금)
 │   ├── run_frontend.sh          # 브라우저 채팅 화면(web_demo_server.py) 기동
-│   └── make_student_zip.sh      # .env 제외 + .env.example 포함한 학생 배포용 zip 생성
 │
 ├── doc/                       # 문서
 │   ├── README.md                # 이 문서
 │   ├── manual_ollma.md          # 사용자 가이드 — 로컬 실모델 기준
 │   ├── manual_openai.md         # 사용자 가이드 — OpenAI API 기준
 │   ├── regression_test_queries.md  # 시스템명 하드코딩 수정 검증용 회귀 테스트 쿼리 목록
-│   ├── image_usecase/           # manual_ollma.md 캡처 이미지
-│   └── image_usecase_openai/    # manual_openai.md 캡처 이미지
+│   ├── USER_GUIDE.md            # 운영자 빠른 안내 (1쪽)
+│   ├── REVIEW.md                # 두 관점 검토·정리 내역
+│   └── images/                  # 아키텍처·그래프 SVG, 수치 캡처
 ```
 
 ---

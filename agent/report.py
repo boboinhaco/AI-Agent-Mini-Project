@@ -69,3 +69,29 @@ def build_report(query: str, result: dict, thread_id: str) -> dict:
         "## 타임라인", *timeline, "", "## 수집된 사실", *(facts or ["- (없음)"]), "",
         "## 진단 및 권장 조치", result.get("final", ""), ""])
     return {"incident_type": incident_type, "systems": systems, "report": report}
+
+
+# ── 사람이 보는 HTML (server.py의 /incidents?format=html 이 사용) ──
+_HTML_CSS = ("body{font-family:-apple-system,'Apple SD Gothic Neo',sans-serif;max-width:860px;margin:32px auto;"
+             "padding:0 16px;color:#1d2030;line-height:1.6}h1{font-size:20px}h2{font-size:16px;margin-top:24px}"
+             "table{border-collapse:collapse;width:100%}th,td{border:1px solid #c9cdd8;padding:6px 10px;text-align:left}"
+             "a{color:#5b5bd6}code{background:#f1f2f7;padding:1px 4px}")
+
+
+def html_page(title: str, body: str) -> str:
+    return (f"<!doctype html><html><head><meta charset='utf-8'><title>{title}</title>"
+            f"<style>{_HTML_CSS}</style></head><body>{body}</body></html>")
+
+
+def render_incident_list(items: list[dict]) -> str:
+    rows = "".join(f"<tr><td><a href='/incidents/{i['id']}?format=html'>#{i['id']}</a></td><td>{i['created']}</td>"
+                   f"<td>{i['query']}</td><td>{i['incident_type'] or '-'}</td><td>{', '.join(i['systems'])}</td></tr>"
+                   for i in items)
+    return html_page("지난 인시던트 리포트", "<h1>지난 인시던트 리포트</h1><table><tr><th>번호</th><th>생성</th>"
+                     f"<th>질문</th><th>장애 유형</th><th>시스템</th></tr>{rows or '<tr><td colspan=5>없음</td></tr>'}</table>")
+
+
+def render_incident(rep: dict) -> str:
+    import markdown
+    body = markdown.markdown(rep["report"], extensions=["tables"])
+    return html_page(f"인시던트 리포트 #{rep['id']}", f"<p><a href='/incidents?format=html'>← 지난 리포트 목록</a></p>{body}")

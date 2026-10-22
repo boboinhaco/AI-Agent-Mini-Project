@@ -16,7 +16,7 @@
 | `env/server_log_ollama.txt` | 메모리 부족 상태에서 write 단계 ReadTimeout이 난 서버 로그 |
 | `env/line_counts.txt` · `file_tree.txt` · `package_versions.txt` | 코드 규모·파일 구조·패키지 버전 |
 | `env/health_*.json` · `ollama_models.txt` | 측정 당시 서버/모델 상태 |
-| `source_snapshot/` | 수정 전 소스 전체 복사본(agent/, server.py, mcp_server*.py, web_chat.html, data/) |
+| (소스 스냅샷) | git 첫 커밋 `4d6c355`가 수정 전 소스 전체 — `git show 4d6c355:agent/graph.py` 처럼 조회 (중복 복사본은 정리) |
 
 ## 측정 결과 요약
 

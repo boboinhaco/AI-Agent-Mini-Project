@@ -7,7 +7,7 @@
 #   - curl로 /chat, /chat/stream 호출해보기 (manual_openai.md 사용 예 1~4)
 #   - web_demo_server.py를 추가로 띄워 브라우저 채팅 화면으로 써보기 (사용 예 5)
 #
-# ⚠️ 실제 OpenAI 계정에 과금되는 원격 API 호출이다 — run_agent_ollma.sh(로컬 추론)와
+# ⚠️ 실제 OpenAI 계정에 과금되는 원격 API 호출이다 — run_agent_ollama.sh(로컬 추론)와
 # 달리, 이 스크립트가 떠 있는 동안 보내는 요청마다 실제 비용이 청구된다.
 #
 # 종료하려면 이 터미널에서 Ctrl+C.

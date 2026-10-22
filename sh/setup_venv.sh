@@ -2,7 +2,7 @@
 #
 # all_total_vue — 이 프로젝트 전용 .venv를 만들고 requirements.txt를 설치하는 스크립트.
 #
-# 다른 sh/ 스크립트들(run_agent_ollma.sh 등)은 ".venv가 이미 있으면 쓴다"고만
+# 다른 sh/ 스크립트들(run_agent_ollama.sh 등)은 ".venv가 이미 있으면 쓴다"고만
 # 가정할 뿐 직접 만들어주지는 않는다 — 이 스크립트가 그 "맨 처음 한 번"을 담당한다.
 # 깨끗한 환경에서 이 폴더를 처음 받았다면(학생 배포 등) 가장 먼저 이걸 실행한다.
 #
@@ -46,7 +46,7 @@ cat <<EOF
 ################################################################
 
 이제 아래 중 하나로 에이전트를 띄울 수 있습니다:
-  bash sh/run_agent_ollma.sh     (로컬 Ollama)
+  bash sh/run_agent_ollama.sh     (로컬 Ollama)
   bash sh/run_agent_openai.sh    (OpenAI API, 과금)
 
 Ollama를 처음 쓰거나 모델을 다시 받아야 하면 먼저:

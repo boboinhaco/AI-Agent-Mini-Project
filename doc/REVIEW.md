@@ -24,7 +24,7 @@
 | A14 | 중간 | discovery에서 증상 매칭이 비면 6개 전부 keep → 검증 부담, 같은 라운드에 RAG 2회 호출 | 실모델 반려 증가 | keep 상한(저하 우선 최대 3), hit 재사용 | ✅ |
 | A15 | 중간 | 거절 재작성 시 토큰 `attempt`가 이전과 같아 말풍선 구분 불가 | 초안이 이어 붙을 수 있음 | `draft_revision` 카운터를 토큰에 실음 | ✅ |
 | A16 | 중간 | 서버 계층·오류 경로 테스트 없음 | 회귀 미검출 | `httpx.ASGITransport` 서버 테스트 추가(pending 수명주기, approve 404, 승인 1회, 오류 이벤트) | ✅ |
-| A17 | 낮음 | 죽은 코드(`nodes/research.py`), 미사용 import, 독스트링 불일치, `run_agent_ollma.sh`의 `rm session.db`, `requirements` mcp 하한 | — | 정리 | ✅ |
+| A17 | 낮음 | 죽은 코드(`nodes/research.py`), 미사용 import, 독스트링 불일치, `run_agent_ollama.sh`의 `rm session.db`, `requirements` mcp 하한 | — | 정리 | ✅ |
 
 ## B. 사용자(비개발 운영자) 관점
 
@@ -60,3 +60,39 @@
 
 트레이드오프: 정확도·안전성·설명 가능성을 올리는 대신 지연이 약 20% 늘었다. 대화 경로를 다시 소형 모델로 돌리면
 잡담은 빨라지지만 품질이 떨어진다(`deps.chat_llm`으로 선택 가능).
+
+
+---
+
+# 정리 (6차) — "필요 이상으로 지저분한 코드·파일" 점검
+
+같은 두 페르소나로 저장소를 훑었다. 왼쪽은 각 관점에서 본 인상, 오른쪽은 처리.
+
+## 시니어 개발자가 본 것
+
+| 발견 | 인상 | 처리 |
+|---|---|---|
+| `agent/ollama_llm.py`·`openai_llm.py`에 시스템 프롬프트 6개, 사실 렌더링, 분석 폴백이 **복사**돼 있음 (486줄) | "프롬프트를 한쪽만 고치면 백엔드 간 동작이 갈라진다. README가 Before 문제로 지적한 중복이 그대로" | `agent/prompts.py`(106줄)로 프롬프트·렌더링·폴백을 모으고 어댑터는 호출 방식만 남김 → 143 + 113줄. fake의 analyze도 같은 폴백 사용 | ✅ |
+| `server.py` 452줄에 HTML CSS·페이지 조립까지 | "API 서버 파일에 뷰 코드가 섞여 있다" | HTML 렌더링을 `agent/report.py`(`render_incident`, `render_incident_list`)로 이동 → 432줄 | ✅ |
+| `before/source_snapshot/` 23파일 | "git 첫 커밋(4d6c355)과 완전 중복. 두 벌을 들고 있으면 어느 쪽이 기준인지 헷갈린다" | 삭제, before/README에 `git show 4d6c355:<path>` 안내 | ✅ |
+| `doc/images/*.png` 미리보기 3장 | "SVG가 원본인데 PNG가 또 있어 둘이 어긋날 수 있다" | 삭제 (수치·테스트 캡처 PNG만 유지) | ✅ |
+| `sh/make_student_zip.sh`, `run_agent_ollma.sh`의 `rm -f session.db` | "강사용 배포 스크립트가 섞여 있고, 실행 스크립트가 '재시작해도 이력 유지'라는 설계와 모순되게 DB를 지운다" | 배포 스크립트 삭제, DB 삭제 줄 제거 | ✅ |
+| `after/judge_fake.*` | "채점기와 검증기가 같은 코드라 항상 만점 — 증거가 아니라 노이즈" | 삭제, 문서에서 fake 채점 언급 제거 | ✅ |
+| `.env.example`의 외부 경로 안내 | "다른 저장소 경로가 그대로 남아 있다" | 제거 | ✅ |
+| `before/env/*.txt`, `after/server_log_ollama.txt` (28KB, 개발 중 traceback 포함) | "지저분하지만 '그때 이런 오류가 있었다'는 증거라 가치가 있다" | 유지 (역사 기록으로 명시) | — |
+| `web_chat.html` 353줄 인라인 JS | "빌드 없는 CDN Vue 데모라면 한 파일이 오히려 낫다" | 유지 | — |
+
+## 사용자(비개발 운영자)가 본 것
+
+| 발견 | 인상 | 처리 |
+|---|---|---|
+| `doc/image_usecase*/` 옛 UI 캡처 12장(5.2MB)이 매뉴얼에 그대로 | "매뉴얼 그림과 지금 화면이 달라서 어느 쪽이 맞는지 모르겠다" | 삭제, 매뉴얼의 그림을 현재 화면 캡처로 교체. 이 버전에 없는 '자동 감시' 절 제거 | ✅ |
+| 문서가 README·doc/README·매뉴얼 2개·REVIEW로 흩어짐 | "처음 열면 뭘 읽어야 하는지 모르겠다" | `doc/USER_GUIDE.md`(운영자 1쪽) 신설, README 상단에 "처음 쓰는 운영자 → USER_GUIDE" 안내, manual_openai는 '차이점만'으로 축소 | ✅ |
+| 스크립트 이름 `run_agent_ollma.sh` (오타) | "ollama인지 ollma인지 매번 헷갈린다" | `run_agent_ollama.sh`로 이름 변경, 옛 이름은 2줄짜리 호환 래퍼로 유지(과제 안내서가 옛 이름을 적고 있음) | ✅ |
+| 실행 스크립트 안내문이 개발 문서를 가리킴 | — | USER_GUIDE를 먼저 안내 | ✅ |
+
+## 정리 후 상태
+
+- 저장소 추적 파일: 171개 → 130개 안팎, 저장 용량 약 5.5MB 감소
+- 코드: 어댑터 486 → 256줄(+공용 106), server.py 452 → 432줄, pyflakes 경고 0, pytest 49개 통과
+- 동작 변화 없음 (프롬프트 문자열 동일, 라우팅/계획/검증 로직 동일)
