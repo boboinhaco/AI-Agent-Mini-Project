@@ -1,3 +1,4 @@
+광주_3반_최인서 G103
 # AI Agent Mini-Project — 운영 인시던트 대응 에이전트
 
 > "payments-service 결제 응답이 느려지고 CPU가 치솟았어요" 같은 운영 문의를 받으면, 모니터링 수치와
@@ -97,7 +98,9 @@ curl -s -X POST localhost:8100/chat/approve -H 'Content-Type: application/json' 
 |---|---|---|
 | 정확도 체크 통과 | **7 / 32 (22%)** | **24 / 29 (83%)** |
 | 서버 오류 | 0 | **2건** (q8 500, q9 연결 끊김) |
-| 총 지연 | 1.3s | 292s (8건 완료 기준) |
+| 총 지연 | 1.3s | 294s (8건 완료 기준) |
+| 총 cost_usd (가상 단가 × 실측 토큰) | 0.0007 | 0.0400 |
+| retry 횟수 | 1 (데모용 강제 타임아웃) | 0 |
 | 검증 반려 | 1건 (길이 검사) | 0건 |
 
 ### 발견된 문제
@@ -159,6 +162,21 @@ OpenAI(gpt-4o) 실사용 재확인: "알림이 안 가는 거 같아" → 되묻
 
 ![개선 후 그래프](doc/images/graph_after.svg)
 
+### 기술 요소별 적용 위치
+
+| 기술 요소 | 어디에, 어떻게 | 파일 |
+|---|---|---|
+| **Multi-Agent** | 조사 단계를 `dispatch → (metrics_agent ∥ log_agent ∥ runbook_agent) → merge` compiled subgraph로 분리. 세 에이전트가 같은 superstep에서 동시 실행, `Annotated[list, add]`로 결과 합산 | `agent/subgraphs/research.py` |
+| **MCP** | 모니터링·로그 Tool, runbook Resource, 진단 Prompt를 MCP 서버가 제공. 서버 2개에 동시 연결해 "어느 서버가 가졌나"를 먼저 탐색. `get_recent_logs` Tool 신규 | `mcp_server.py`, `agent/mcp_client.py` |
+| **RAG** | runbook 6개를 InMemoryVectorStore에 임베딩(제목+증상), 질문으로 검색 후 증상 어휘 겹침으로 재정렬. 임베딩은 백엔드별(해싱/nomic/OpenAI) | `agent/rag.py`, `agent/nodes/replan.py` |
+| **의존성 주입** | LLM 2종·MCP·세션·RAG·대화 모델·승인 on/off를 `SupervisorDeps` 하나로 묶어 `functools.partial`로 노드에 주입. 테스트는 FakeMCP로 교체 | `agent/deps.py`, `agent/graph.py`, `tests/conftest.py` |
+| **LangSmith** | 요청당 `chat_request` 루트 아래 노드·서브에이전트·LLM·MCP·RAG(`run_type=retriever`) 호출이 계층 trace | 모든 노드의 `@traceable` |
+| **모듈화** | graph.py 338줄 → 조립 77줄 + 노드별 파일 + 공용 상태/프롬프트/계획 정규화 모듈 | `agent/nodes/`, `agent/state.py`, `agent/prompts.py`, `agent/plan_utils.py` |
+| **단위 테스트** | pytest 55개 — 라우팅·RAG·검증 규칙·그래프 통합(HITL 중단/재개)·서버 계층(승인 1회, SSE 오류)·메모리·리포트 | `tests/` |
+| Human-in-the-loop | `interrupt()`로 멈추고 `/chat/approve`로 재개, 승인·거절 기억 | `agent/nodes/approval.py`, `server.py` |
+| 메모리 관리 | 10메시지 초과 시 품질 모델 요약 → SQLite, 프롬프트에 요약 + 최근 12개 | `agent/memory.py`, `agent/session_store.py`, `agent/prompts.py` |
+| 평가 (LLM-as-judge) | 수치 인용·지어내기·조치 구체성 3항목 LLM 채점 | `eval/judge.py` |
+
 ## 6. After — 달라진 점과 증거
 
 ### 수치 (같은 쿼리 10개, `after/summary_*.md`)
@@ -168,6 +186,8 @@ OpenAI(gpt-4o) 실사용 재확인: "알림이 안 가는 거 같아" → 되묻
 | ollama 정확도 체크 | 24 / 29 (83%) | 32 / 32 | **34 / 34** (5차부터 조사 시스템을 '선별된 근거' 기준 정확 일치로 더 엄격히 채점) |
 | ollama 서버 오류 | 2건 | 0건 | **0건** (오류는 화면에 `Error` 이벤트로 전달) |
 | ollama 총 지연 | 294s (8건 완료 기준) | 657s | 791s (대화도 8b 모델, 5항목 답변 틀) |
+| ollama 총 cost_usd (가상 단가 × 실측 토큰) | 0.0400 | 0.094 | 0.1366 (조사 시스템·재작성 증가분) |
+| ollama retry 횟수 (MCP 일시 오류 재시도) | 0 (Before는 데모용 강제 타임아웃이 켜져 fake에서 1회) | 1 | 0 (데모 타임아웃을 옵션으로 돌려 실제 재시도만 집계) |
 | ollama 검증 반려→재작성 | 0건 (검사가 길이뿐) | 4건 | 5건 |
 | HITL 승인 요청 | — | 6회 (쿼리당 최대 2회) | **4회** (질문당 1회) |
 | 과잉 조사(기대 밖 시스템) | 측정 안 함 | 측정 안 함 | **0** |
@@ -255,6 +275,9 @@ Ollama 측정 중에는 다른 Ollama 요청을 동시에 보내지 마세요 �
 - **HITL**: 위험 조치 감지가 정규식이라 "재시작은 하지 마세요" 같은 부정문도 승인을 요구한다. interrupt 상태는
   MemorySaver에만 있어 서버 재시작 시 승인 대기 중인 run은 사라진다.
 - **요약 메모리**: 손실 압축이다. 소형 모델(0.6b)은 이름을 뭉개는 것이 실측돼 요약은 품질 모델이 맡는다(10메시지마다 1회).
+- **되묻기·별칭**: 증상 어휘 겹침이 0이면 되묻는데, runbook 증상 절에 없는 표현은 실제 장애여도 되물을 수 있다(오탐). 업무 용어 별칭은 수동 사전이라 새 시스템을 추가하면 같이 손봐야 한다.
+- **승인 상태**: 승인·거절 기억은 run 단위(MemorySaver)라 서버 재시작 시 사라진다. SQLite 체크포인터로 바꾸면 해결되지만 추가 패키지가 필요해 보류했다.
+- **측정의 한계**: fake 백엔드 수치는 라우터·검증기가 같은 코드라 동어반복이고, LLM-as-judge는 답을 쓴 모델(gpt-4o/qwen3:8b)이 채점한다. 그래서 개선 증거는 ollama 회귀 수치와 규칙 검사로 보고 judge는 보조로만 쓴다.
 
 ## 10. 남은 과제 처리 (3차)
 
