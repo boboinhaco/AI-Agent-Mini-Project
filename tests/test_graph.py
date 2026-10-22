@@ -79,4 +79,5 @@ async def test_replan_adds_missing_system(deps):
     out = await replan_check_node(state, deps)
     gap = out["tasks"][1:]
     assert any(t["kind"] == "monitoring" and t["target"] == "auth-service" for t in gap)
-    assert any(t["kind"] == "runbook" and t["target"] == "cpu-spike" for t in gap)
+    # 질문에 'CPU 급증'(web-01)과 '커넥션 풀'(auth-service)이 함께 있어 두 매뉴얼 모두 타당
+    assert any(t["kind"] == "runbook" and t["target"] in ("cpu-spike", "high-latency") for t in gap)

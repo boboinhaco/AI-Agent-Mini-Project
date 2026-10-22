@@ -75,8 +75,15 @@ def fallback_analysis(collected: list[dict]) -> str:
     return "모니터링된 시스템 모두 healthy — 패턴상 이상 징후 없음"
 
 
+RECENT_TURNS = 12
+
+
 def chat_user(query: str, history: list[dict]) -> str:
-    rendered = "\n".join(f"{m['role']}: {m['content']}" for m in history[-10:])
+    """요약(system 메시지)은 길이와 무관하게 항상 넣고, 원문은 최근 RECENT_TURNS개만.
+    (실측 버그: history[-10:]로 자르면 맨 앞의 요약이 떨어져 나가 이름을 잊었다)"""
+    summary = [m for m in history if m.get("role") == "system"]
+    recent = [m for m in history if m.get("role") != "system"][-RECENT_TURNS:]
+    rendered = "\n".join(f"{m['role']}: {m['content']}" for m in summary + recent)
     return f"## 지금까지의 대화\n{rendered or '(없음)'}\n\n## 사용자의 새 메시지\n{query}"
 
 

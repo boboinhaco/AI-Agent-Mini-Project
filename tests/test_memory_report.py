@@ -39,3 +39,28 @@ def test_build_and_store_report(deps):
     iid = deps.session_store.save_incident("t", "q", rep["incident_type"], rep["systems"], rep["report"])
     assert deps.session_store.get_incident(iid)["incident_type"] == "disk-full"
     assert deps.session_store.list_incidents()[0]["id"] == iid
+
+
+def test_chat_prompt_keeps_summary_when_history_is_long():
+    from agent.prompts import chat_user
+    history = [{"role": "system", "content": "[이전 대화 요약] 사용자 이름: 홍길동"}] + \
+              [{"role": "user" if i % 2 == 0 else "assistant", "content": f"m{i}"} for i in range(16)]
+    rendered = chat_user("내 이름이 뭐야", history)
+    assert "사용자 이름: 홍길동" in rendered and "m15" in rendered     # 요약은 항상, 최근 메시지는 뒤에서
+
+
+@pytest.mark.asyncio
+async def test_connection_pool_query_picks_latency_runbook():
+    from agent.rag import HashEmbeddings, RunbookIndex
+    idx = RunbookIndex(HashEmbeddings()).build()
+    assert (await idx.classify("인증 서비스 커넥션 풀 확인해줘"))["incident_type"] == "high-latency"
+    assert (await idx.classify("로그인 시에 바로 로그인이 되지 않고 좀 오래 기다려야해"))["incident_type"] == "high-latency"
+
+
+@pytest.mark.asyncio
+async def test_healthy_system_with_unmatched_symptom_skips_runbook(graph):
+    r = await graph.ainvoke({"query": "웹 서버에서 알람이 안 와", "thread_id": "t", "history": [],
+                             "events": [], "cost_usd": 0.0}, config={"configurable": {"thread_id": "test-healthy"}})
+    types = [e["type"] for e in r["events"]]
+    assert "RunbookSkipped" in types and not any(c["source"] == "runbook" for c in r["collected"])
+    assert "web-01" in r["final"]

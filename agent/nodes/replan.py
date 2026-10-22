@@ -38,6 +38,17 @@ async def replan_check_node(state: AgentState, deps: SupervisorDeps) -> dict:
         for i, target in enumerate(missing):
             gap_tasks.append({"id": f"task-gap-sys-{i}", "agent": "research", "kind": "monitoring",
                               "target": target, "status": "pending"})
+        all_healthy = bool(collected) and all(
+            c["data"].get("status") == "healthy" and not c["data"].get("alerts")
+            for c in collected if c["source"] == "monitoring")
+        if not has_runbook and all_healthy and hit is None:
+            probe = await deps.rag.classify(build_query_text(state["query"], []))
+            if probe.get("lexical", 0) == 0:
+                # "웹 서버 알람이 안 와" — 증상이 어떤 매뉴얼과도 안 맞고 시스템은 정상: 엉뚱한 매뉴얼 대신
+                # '정상' 보고로 넘긴다 (RunbookSkipped)
+                has_runbook = True
+                screened_event = screened_event or {"type": "RunbookSkipped",
+                                                    "reason": "증상 불일치 + 조사 시스템 모두 정상"}
         if not has_runbook:
             if hit is None:   # discovery에서 이미 분류했으면 재사용
                 # 사용자 문장만으로 먼저 분류한다 — "메모리가 부족하대"처럼 증상 어휘가 있으면 그대로 쓰고,

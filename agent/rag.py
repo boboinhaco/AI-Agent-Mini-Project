@@ -91,7 +91,14 @@ def _lexical_overlap(query: str, doc: str) -> int:
         if len(raw) < 2 or raw in stop:
             continue
         tokens.add(raw[:3] if re.search(r"[가-힣]", raw) else raw)   # 한글은 앞 3글자, 영문은 전체
-    return sum(1 for t in tokens if t in q)
+    score = sum(1 for t in tokens if t in q)
+    # 쉼표로 나뉜 증상 구절("커넥션 풀 사용률", "디스크 공간 부족")이 통째로(앞 5글자) 질문에 있으면 가중 —
+    # 단어 하나("커넥션")가 두 매뉴얼에 다 있어 동점이 나던 문제 해결
+    for phrase in re.split(r"[,.]", doc.lower()):
+        phrase = re.sub(r"\(.*?\)", "", phrase).strip()
+        if len(phrase) >= 4 and phrase[:5] in q:
+            score += 2
+    return score
 
 
 def _section(text: str, heading: str) -> str:

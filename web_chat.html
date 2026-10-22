@@ -168,6 +168,7 @@ const { createApp, ref, reactive, nextTick } = Vue;
 const STEP_LABELS = {
   PendingDiscarded: () => '이전 승인 대기 요청은 취소하고 새 질문을 처리합니다',
   ClarificationAsked: () => '증상이 어느 시스템·매뉴얼과도 맞지 않아 되묻습니다',
+  RunbookSkipped: () => '조사한 시스템이 모두 정상이라 대응 매뉴얼 없이 상태만 보고합니다',
   SystemDiscovery: e => `어느 시스템인지 명시되지 않아 ${e.targets.length}개 시스템을 모두 확인합니다`,
   SystemsScreened: e => `증상(${e.incident_type})과 맞는 시스템: ${e.kept.join(', ')}${e.dropped.length ? ` (나머지 ${e.dropped.length}개는 관련 없음)` : ''}`,
   ResearchDispatched: e => `조회 시작 — 모니터링 ${e.sub_agents.metrics}건 · 로그 ${e.sub_agents.logs}건 · 매뉴얼 ${e.sub_agents.runbook}건 (동시에 진행)`,
