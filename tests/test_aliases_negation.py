@@ -23,3 +23,13 @@ def mon(name, status, alerts):
 def test_relevant_systems_capped():
     col = [mon(f"s{i}-service", "degraded", ["cpu high"]) for i in range(6)]
     assert len(relevant_systems(col, "cpu-spike")) == 3
+
+
+def test_plan_drops_systems_not_asked_for():
+    from agent.plan_utils import normalize_plan
+    raw = '{"needs_analysis": false, "tasks": [{"agent":"research","target":"payment-service"},{"agent":"research","target":"auth-service"}]}'
+    targets = [t["target"] for t in normalize_plan(raw, "payment-service 에서 메모리가 부족하대")["tasks"]]
+    assert targets == ["payments-service"]          # 오타는 별칭으로 교정, 덧붙인 auth-service는 제외
+    raw2 = '{"needs_analysis": false, "tasks": [{"agent":"research","target":"gateway-service"}]}'
+    targets = [t["target"] for t in normalize_plan(raw2, "gateway-service에서 payments-service로 가는 요청이 타임아웃")["tasks"]]
+    assert set(targets) == {"gateway-service", "payments-service"}   # 빠뜨린 시스템은 보충

@@ -21,6 +21,8 @@ def normalize_plan(content: str, query: str) -> dict:
             target = t.get("target", "")
             if target not in KNOWN_SYSTEMS:          # 오타·목록 밖 이름 → 쿼리에서 다시 찾음
                 target = wanted[0] if wanted else DEFAULT_SYSTEM
+            if wanted and target not in wanted:      # 질문이 가리킨 시스템이 있으면 모델이 덧붙인 다른 시스템은 제외
+                continue                             # (실측: gpt-4o-mini가 auth-service를 임의로 추가 — 누락은 replan이 보충)
             if target in seen:
                 continue
             seen.add(target)
