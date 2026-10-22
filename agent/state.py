@@ -140,6 +140,7 @@ class AgentState(TypedDict, total=False):
     approval: dict | None
     approval_rejections: int
     discovery: bool
+    clarify: bool
     draft_revision: int
     approved_actions: list[str]
     rejected_actions: list[str]

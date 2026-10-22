@@ -23,6 +23,11 @@ def _after_route(state: AgentState) -> str:
     return "chat_answer" if state["route"] == "chat" else "plan"
 
 
+def _after_plan(state: AgentState) -> str:
+    """증상·시스템이 불명확해 되물은 경우는 조사 없이 종료."""
+    return END if state.get("clarify") else "gate"
+
+
 def _after_replan_check(state: AgentState) -> str:
     last = state["events"][-1]
     return "analysis" if last.get("is_sufficient") else "research"
@@ -60,7 +65,7 @@ def build_graph(deps: SupervisorDeps):
     g.add_conditional_edges("route", _after_route,
                             {"chat_answer": "chat_answer", "plan": "plan"})
     g.add_edge("chat_answer", END)
-    g.add_edge("plan", "gate")
+    g.add_conditional_edges("plan", _after_plan, {"gate": "gate", END: END})
     g.add_edge("gate", "research")
     g.add_edge("research", "replan_check")
     g.add_conditional_edges("replan_check", _after_replan_check,

@@ -211,7 +211,7 @@ async def _finish_turn(deps, thread_id: str, message: str, final: str,
     if not user_saved:
         deps.session_store.append(thread_id, "user", message)
     deps.session_store.append(thread_id, "assistant", final)
-    if result is not None and result.get("route") == "incident":
+    if result is not None and result.get("route") == "incident" and not result.get("clarify"):
         rep = build_report(message, result, thread_id)
         result["incident_id"] = deps.session_store.save_incident(
             thread_id, message, rep["incident_type"], rep["systems"], rep["report"])
@@ -367,7 +367,7 @@ async def _stream_graph(graph_input, run_id: str, thread_id: str, message: str,
             deps.session_store.append(thread_id, "user", message)
         deps.session_store.append(thread_id, "assistant", final)
         incident_id = None
-        if result.get("route") == "incident":
+        if result.get("route") == "incident" and not result.get("clarify"):
             rep = build_report(message, result, thread_id)
             incident_id = deps.session_store.save_incident(
                 thread_id, message, rep["incident_type"], rep["systems"], rep["report"])

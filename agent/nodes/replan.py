@@ -40,7 +40,11 @@ async def replan_check_node(state: AgentState, deps: SupervisorDeps) -> dict:
                               "target": target, "status": "pending"})
         if not has_runbook:
             if hit is None:   # discovery에서 이미 분류했으면 재사용
-                hit = await deps.rag.classify(build_query_text(state["query"], collected))
+                # 사용자 문장만으로 먼저 분류한다 — "메모리가 부족하대"처럼 증상 어휘가 있으면 그대로 쓰고,
+                # 없을 때만 저하 시스템의 알림 문구를 보탠다(알림 문구가 사용자 말을 덮던 문제 수정)
+                hit = await deps.rag.classify(build_query_text(state["query"], []))
+                if hit.get("lexical", 0) == 0:
+                    hit = await deps.rag.classify(build_query_text(state["query"], collected))
             gap_tasks.append({"id": "task-gap-runbook", "agent": "research", "kind": "runbook",
                               "target": hit["incident_type"], "status": "pending",
                               "rag": {"title": hit.get("title"), "score": hit.get("score")}})

@@ -2,7 +2,8 @@
 from langsmith import traceable
 
 from ..deps import SupervisorDeps
-from ..state import KNOWN_SYSTEMS, AgentState, add_cost, extract_system_name, target_systems
+from ..rag import build_query_text
+from ..state import KNOWN_SYSTEMS, SYSTEM_LABELS, AgentState, add_cost, extract_system_name, target_systems
 
 
 @traceable(name="plan_node")
@@ -20,6 +21,19 @@ async def plan_node(state: AgentState, deps: SupervisorDeps) -> dict:
         # 시스템명이 없는 문의("디스크 공간이 부족하다고 알람이 왔어") — 기본 시스템(auth-service)으로
         # 폴백하면 엉뚱한 진단이 나온다(실측). 전체 시스템을 병렬로 훑고 replan_check가 증상과 맞는
         # 시스템만 남긴다(SystemsScreened).
+        hit = await deps.rag.classify(build_query_text(state["query"], []))
+        if hit.get("lexical", 0) == 0:
+            # 사용자 문장이 어떤 매뉴얼의 증상과도 겹치지 않는다("알림이 안 가는 것 같아") — 추측해서
+            # 엉뚱한 진단을 내는 대신 어느 시스템·어떤 증상인지 되묻고 끝낸다 (ClarificationAsked)
+            systems = " · ".join(f"{n}({SYSTEM_LABELS.get(n, '')})" for n in sorted(KNOWN_SYSTEMS))
+            final = ("어느 시스템의 어떤 증상인지 조금 더 알려주시면 바로 조사하겠습니다.\n"
+                     f"확인할 수 있는 시스템: {systems}\n"
+                     "예: 'payments-service 결제가 느려요', '로그 서버 디스크가 부족하대요', "
+                     "'게이트웨이에서 타임아웃이 나요'")
+            return {"tasks": [], "needs_analysis": False, "clarify": True, "final": final,
+                    "cost_usd": add_cost(state, usage),
+                    "events": state["events"] + [{"type": "ClarificationAsked",
+                                                  "reason": "증상·시스템 불명확", "rag_top": hit["incident_type"]}]}
         discovery = True
         others = [t for t in tasks if t["agent"] != "research"]
         tasks = [{"id": f"task-{i}", "agent": "research", "kind": "monitoring",

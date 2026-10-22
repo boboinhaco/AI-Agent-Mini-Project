@@ -14,9 +14,9 @@ ROUTE = ("당신은 ICT 운영 지원 라우터다. 사용자 요청을 분류�
 
 PLAN = ("당신은 ICT 운영 Supervisor의 planning 노드다. 표준 진단 절차에 따라 "
         "실행 계획(tasks)을 JSON으로 세워라. "
-        "사용자 요청에 등장한 시스템마다 agent=research task를 하나씩 세워라 "
-        f"(알려진 시스템: {', '.join(sorted(KNOWN_SYSTEMS))} — 특정 시스템이 "
-        "언급되지 않았으면 auth-service를 기본으로 조사하라). "
+        "사용자 요청이 가리키는 시스템마다 agent=research task를 하나씩 세워라 "
+        f"(알려진 시스템: {', '.join(sorted(KNOWN_SYSTEMS))}). 요청에 없는 시스템을 임의로 추가하지 마라. "
+        "'결제'는 payments-service, '로그인'은 auth-service처럼 업무 용어는 해당 시스템으로 해석하라. "
         "패턴 분석이 꼭 필요하다고 판단되면 agent=analysis task를 추가해도 된다.")
 
 ANALYZE = ("당신은 ICT 운영 패턴 분석가다. 여러 시스템의 모니터링 결과를 비교해 "

@@ -50,3 +50,27 @@ async def test_name_intro_goes_to_chat_and_is_remembered(graph, deps):
     assert "홍길동" in reply
     reply, _ = await deps.fast_llm.chat("넌 누구야 뭘 할 수 있어", [])
     assert "인시던트" in reply
+
+
+@pytest.mark.asyncio
+async def test_vague_query_asks_for_clarification(graph):
+    """어떤 매뉴얼 증상과도 안 겹치는 모호한 문의 → 추측하지 않고 되묻고 끝낸다."""
+    r = await graph.ainvoke({"query": "갑자기 알림이 안 가는 거 같아", "thread_id": "t", "history": [],
+                             "events": [], "cost_usd": 0.0}, config=run_config("vague"))
+    assert r.get("clarify") and "확인할 수 있는 시스템" in r["final"]
+    assert not r.get("collected") and "TaskCompleted" not in [e["type"] for e in r["events"]]
+
+
+@pytest.mark.asyncio
+async def test_user_words_beat_alert_text_for_runbook(deps):
+    """사용자가 '메모리'라고 했으면, 같이 조사된 다른 시스템의 지연 알림이 많아도 memory-leak."""
+    from agent.nodes.replan import replan_check_node
+    mon = lambda n, alerts: {"source": "monitoring", "data": {"system_name": n, "status": "degraded", "alerts": alerts}}
+    state = {"query": "payment-service 에서 메모리가 부족하대",
+             "tasks": [{"id": "t0", "agent": "research", "kind": "monitoring", "target": "payments-service", "status": "done"},
+                       {"id": "t1", "agent": "research", "kind": "monitoring", "target": "auth-service", "status": "done"}],
+             "collected": [mon("payments-service", ["CPU 91%"]),
+                           mon("auth-service", ["p95 latency 2.4s", "connection pool 92% used"])],
+             "events": [], "replan_rounds": 0}
+    out = await replan_check_node(state, deps)
+    assert next(t for t in out["tasks"] if t["kind"] == "runbook")["target"] == "memory-leak"
